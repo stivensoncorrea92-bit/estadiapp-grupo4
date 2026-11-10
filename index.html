@@ -457,7 +457,7 @@
           <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
             <div>
               <h3 class="text-sm font-bold text-white">Tabla de Contingencia (Doble Entrada)</h3>
-              <p class="text-xs text-slate-400">Cruce frecuencial entre dos variables cualitativas de la muestra</p>
+              <p class="text-xs text-slate-400">Cruce frecuencial entre two variables cualitativas de la muestra</p>
             </div>
 
             <div class="flex gap-2">
@@ -491,7 +491,7 @@
       <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-4 flex justify-between items-center no-print">
         <span class="text-xs text-slate-300">Este informe consolida automáticamente la ficha técnica, los gráficos y tus análisis guardados para imprimir.</span>
         <button onclick="window.print()" class="bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-bold px-5 py-2.5 rounded-xl text-xs transition shadow-lg shadow-amber-500/20 flex items-center gap-2">
-          🖨️ Imprimir / Descargar PDF
+          🖨️ Imprimir / Guardar PDF
         </button>
       </div>
 
@@ -502,8 +502,9 @@
         <div class="border-b-2 border-slate-900 pb-4 flex justify-between items-start">
           <div>
             <h1 class="text-xl font-black text-slate-900 uppercase tracking-tight">Informe Estadístico de Investigación de Campo</h1>
-            <p class="text-xs font-bold text-slate-700">Proyecto de Aula · Estadística (840601) · Periodo 2026 B</p>
-            <p class="text-xs text-slate-600">UNIPAZ — Escuela de Ingeniería de Producción · Barrancabermeja</p>
+            <p class="text-xs font-bold text-slate-700">Proyecto de Aula · Estadística (840601) · UNIPAZ</p>
+            <p class="text-xs text-slate-600">Integrantes: <input type="text" id="inf-integrantes" value="[nombres del grupo]" onchange="guardarTextosInforme()" class="border-b border-dashed border-slate-400 bg-transparent text-slate-800 font-medium px-1 focus:outline-none w-64"></p>
+            <p class="text-xs text-slate-600 mt-0.5">Periodo de recolección: <span id="inf-periodo-rango-header" class="font-semibold">--</span> | Total de registros ($n$): <span id="inf-muestra-n-header" class="font-bold text-emerald-700">0</span></p>
           </div>
           <div class="text-right text-xs">
             <p class="font-bold text-slate-900">Espacio: Gimnasio UNIPAZ</p>
@@ -514,28 +515,44 @@
         <!-- 1. FICHA TÉCNICA -->
         <div class="space-y-2">
           <h2 class="text-xs font-extrabold text-slate-900 uppercase tracking-wider bg-slate-100 p-2 border-l-4 border-slate-900">1. Ficha Técnica del Estudio</h2>
-          <div class="grid grid-cols-2 gap-4 text-xs bg-slate-50 p-3 rounded border border-slate-200">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs bg-slate-50 p-3 rounded border border-slate-200">
             <div>
-              <p><strong>Objetivo:</strong> Analizar la permanencia, niveles de congestión y perfil de uso de los usuarios en el Gimnasio UNIPAZ.</p>
-              <p class="mt-1"><strong>Población:</strong> Usuarios del Gimnasio UNIPAZ (estudiantes, docentes y personal administrativo).</p>
-              <p class="mt-1"><strong>Muestra ($n$):</strong> <span id="inf-muestra-n">0</span> registros de campo colectados.</p>
+              <p><strong>Objetivo:</strong> <input type="text" id="inf-ficha-obj" value="Analizar la permanencia, niveles de congestión y perfil de uso de los usuarios en el Gimnasio UNIPAZ." onchange="guardarTextosInforme()" class="w-full bg-transparent border-b border-dashed border-slate-300 focus:outline-none font-normal"></p>
+              <p class="mt-1.5"><strong>Población:</strong> <input type="text" id="inf-ficha-pob" value="Usuarios del Gimnasio UNIPAZ (estudiantes, docentes y personal administrativo)." onchange="guardarTextosInforme()" class="w-full bg-transparent border-b border-dashed border-slate-300 focus:outline-none font-normal"></p>
+              <p class="mt-1.5"><strong>Muestra ($n$):</strong> <span id="inf-muestra-n">0</span> registros de campo colectados.</p>
             </div>
             <div>
-              <p><strong>Tipo de Muestreo:</strong> Probabilístico Sistemático por franjas de atención.</p>
-              <p class="mt-1"><strong>Periodo de Muestreo:</strong> <span id="inf-periodo-rango">--</span></p>
-              <p class="mt-1"><strong>Variables:</strong> Zona (Cualitativa), Permanencia (Cuantitativa), Frecuencia (Cualitativa), Hidratación (Cualitativa), Estado Equipos (Cualitativa), Franja horaria (Cualitativa).</p>
+              <p><strong>Tipo de Muestreo:</strong> 
+                <select id="inf-ficha-muestreo" onchange="guardarTextosInforme()" class="bg-white border border-slate-300 rounded px-2 py-0.5 text-xs text-slate-800">
+                  <option value="Sistemático">Sistemático</option>
+                  <option value="Aleatorio simple">Aleatorio simple</option>
+                  <option value="Estratificado">Estratificado</option>
+                </select>
+              </p>
+              <p class="mt-1.5"><strong>Periodo de Muestreo:</strong> <span id="inf-periodo-rango">--</span></p>
+              <p class="mt-1.5"><strong>Variables del estudio:</strong></p>
+              <ul class="list-disc list-inside text-[11px] text-slate-700 pl-1 mt-0.5 space-y-0.5">
+                <li>Zona del gimnasio (Cualitativa Nominal)</li>
+                <li>Permanencia en minutos (Cuantitativa Continua)</li>
+                <li>Frecuencia de asistencia (Cualitativa Ordinal)</li>
+                <li>Elemento de hidratación (Cualitativa Dicotómica)</li>
+                <li>Calificación del estado de equipos (Cualitativa Ordinal)</li>
+                <li>Franja horaria de ingreso (Cualitativa Calculada)</li>
+              </ul>
             </div>
           </div>
         </div>
 
-        <!-- 2. RESUMEN EJECUTIVO DE MEDIDAS -->
-        <div class="space-y-2">
-          <h2 class="text-xs font-extrabold text-slate-900 uppercase tracking-wider bg-slate-100 p-2 border-l-4 border-slate-900">2. Consolidado de Medidas Estadísticas</h2>
-          <div id="inf-resumen-medidas-tabla" class="overflow-x-auto text-xs"></div>
+        <!-- 2. RESULTADOS COMPLETOS DE TODAS LAS VARIABLES (TABLAS Y MEDIDAS) -->
+        <div class="space-y-4">
+          <h2 class="text-xs font-extrabold text-slate-900 uppercase tracking-wider bg-slate-100 p-2 border-l-4 border-slate-900">2. Resultados y Análisis Estadístico de Todas las Variables</h2>
+          <div id="inf-resultados-todas-variables" class="space-y-6 text-xs">
+            <!-- Render dinámico completo -->
+          </div>
         </div>
 
         <!-- 3. CUADROS EDITABLES PERSISTENTES -->
-        <div class="space-y-4">
+        <div class="space-y-4 pt-2">
           <h2 class="text-xs font-extrabold text-slate-900 uppercase tracking-wider bg-slate-100 p-2 border-l-4 border-slate-900">3. Análisis, Conclusiones y Recomendaciones</h2>
 
           <div>
@@ -982,12 +999,10 @@
       const suma = datos.reduce((a,b) => a+b, 0);
       const media = suma / n;
 
-      // Mediana
       let mediana = 0;
       if (n % 2 === 0) mediana = (datos[n/2 - 1] + datos[n/2]) / 2;
       else mediana = datos[Math.floor(n/2)];
 
-      // Moda (Todas si hay varias, o "no hay moda" si ningún valor se repite)
       const frecs = {};
       datos.forEach(x => frecs[x] = (frecs[x] || 0) + 1);
       let maxFrec = 0;
@@ -1002,12 +1017,10 @@
       const max = datos[n-1];
       const rango = max - min;
 
-      // Varianza Muestral y Desv Estándar Muestral (divide entre n-1)
       const s2 = n > 1 ? datos.reduce((acc, val) => acc + Math.pow(val - media, 2), 0) / (n - 1) : 0;
       const s = Math.sqrt(s2);
       const cv = media !== 0 ? (s / media) * 100 : 0;
 
-      // Cuartiles Método CUARTIL.INC Excel
       function getPercentileInc(arr, p) {
         if (arr.length === 1) return arr[0];
         const rank = p * (arr.length - 1);
@@ -1022,7 +1035,6 @@
       const q3 = getPercentileInc(datos, 0.75);
       const ric = q3 - q1;
 
-      // Tabla de frecuencias para datos agrupados (Sturges)
       const kClasses = Math.max(1, Math.round(1 + 3.322 * Math.log10(n)));
       const ampRaw = rango / kClasses;
       const amp = Math.ceil(ampRaw * 10) / 10 || 1;
@@ -1437,59 +1449,99 @@
 
     function renderInforme() {
       document.getElementById('inf-fecha-emision').innerText = new Date().toLocaleDateString('es-CO');
-      document.getElementById('inf-muestra-n').innerText = registros.length.toLocaleString('es-CO');
+      const n = registros.length;
+      document.getElementById('inf-muestra-n').innerText = n.toLocaleString('es-CO');
+      document.getElementById('inf-muestra-n-header').innerText = n.toLocaleString('es-CO');
 
-      if (registros.length > 0) {
+      if (n > 0) {
         let fechas = registros.map(r => r.fecha).sort();
-        document.getElementById('inf-periodo-rango').innerText = `${fechas[0]} al ${fechas[fechas.length-1]}`;
+        const rangoStr = `${fechas[0]} al ${fechas[fechas.length-1]}`;
+        document.getElementById('inf-periodo-rango').innerText = rangoStr;
+        document.getElementById('inf-periodo-rango-header').innerText = rangoStr;
+      } else {
+        document.getElementById('inf-periodo-rango').innerText = 'Sin registros';
+        document.getElementById('inf-periodo-rango-header').innerText = 'Sin registros';
       }
 
-      const container = document.getElementById('inf-resumen-medidas-tabla');
-      if (registros.length === 0) {
-        container.innerHTML = '<p class="text-xs text-slate-500">Sin datos cargados.</p>';
+      const container = document.getElementById('inf-resultados-todas-variables');
+      if (n === 0) {
+        container.innerHTML = '<p class="text-xs text-slate-500">No hay datos en la base para consolidar resultados.</p>';
         return;
       }
 
-      const tiempos = registros.map(r => r.tiempo).sort((a,b)=>a-b);
-      const media = tiempos.reduce((a,b)=>a+b,0) / tiempos.length;
-      const s = Math.sqrt(tiempos.reduce((a,b)=>a+Math.pow(b-media,2),0)/(registros.length-1 || 1));
+      // Generar reporte detallado de TODAS las variables
+      let html = '';
 
-      container.innerHTML = `
-        <table class="w-full text-left border border-slate-300">
-          <thead class="bg-slate-100 text-slate-900 font-bold border-b border-slate-300">
-            <tr>
-              <th class="p-2 border-r">Variable</th>
-              <th class="p-2 border-r">Tipo</th>
-              <th class="p-2 border-r">Medida Principal (Promedio/Moda)</th>
-              <th class="p-2">Dispersión / Detalle</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr class="border-b border-slate-200">
-              <td class="p-2 font-bold border-r">Tiempo de Permanencia</td>
-              <td class="p-2 border-r">Cuantitativa Continua</td>
-              <td class="p-2 border-r font-mono">X̄ = ${media.toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2})} min</td>
-              <td class="p-2 font-mono">s = ±${s.toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2})} min</td>
-            </tr>
-            <tr class="border-b border-slate-200">
-              <td class="p-2 font-bold border-r">Zona Predominante</td>
-              <td class="p-2 border-r">Cualitativa Nominal</td>
-              <td class="p-2 border-r">${document.getElementById('kpi-zona').innerText}</td>
-              <td class="p-2 text-slate-600">Moda de uso en gimnasio</td>
-            </tr>
-            <tr>
-              <td class="p-2 font-bold border-r">Franja Horaria Pico</td>
-              <td class="p-2 border-r">Cualitativa Calculada</td>
-              <td class="p-2 border-r font-mono">${document.getElementById('kpi-franja').innerText}</td>
-              <td class="p-2 text-slate-600">Máxima concentración</td>
-            </tr>
-          </tbody>
-        </table>
+      // 1. Tiempo de permanencia (Cuantitativa)
+      const tiempos = registros.map(r => r.tiempo).sort((a,b)=>a-b);
+      const media = tiempos.reduce((a,b)=>a+b,0) / n;
+      const s = Math.sqrt(tiempos.reduce((a,b)=>a+Math.pow(b-media,2),0)/(n-1 || 1));
+      html += `
+        <div class="border border-slate-200 rounded p-4 bg-slate-50 space-y-2">
+          <h3 class="font-bold text-slate-900 text-xs uppercase">A. Tiempo de Permanencia (Cuantitativa Continua)</h3>
+          <p class="text-slate-700"><strong>Medidas resumen:</strong> Media $\\bar{x} = ${media.toFixed(2).replace('.',',')}$ min, Desviación Estándar $s = \\pm${s.toFixed(2).replace('.',',')}$ min, Mínimo $= ${tiempos[0]}$ min, Máximo $= ${tiempos[n-1]}$ min.</p>
+        </div>
       `;
+
+      // Variables cualitativas a detallar
+      const varsCualis = [
+        { key: 'zona', title: 'B. Zona del Gimnasio (Cualitativa Nominal)' },
+        { key: 'frecuencia', title: 'C. Frecuencia de Asistencia (Cualitativa Ordinal)' },
+        { key: 'hidratacion', title: 'D. Elemento de Hidratación (Cualitativa Dicotómica)' },
+        { key: 'calificacion', title: 'E. Calificación del Estado de Equipos (Cualitativa Ordinal)' },
+        { key: 'franja', title: 'F. Franja Horaria de Ingreso (Cualitativa Calculada)' }
+      ];
+
+      varsCualis.forEach(item => {
+        const frecs = {};
+        registros.forEach(r => {
+          let val = r[item.key] || 'N/A';
+          frecs[val] = (frecs[val] || 0) + 1;
+        });
+
+        let filasHtml = '';
+        let acFi = 0;
+        for (let cat in frecs) {
+          let fi = frecs[cat];
+          acFi += fi;
+          let hi = fi / n;
+          filasHtml += `
+            <tr class="border-b border-slate-200">
+              <td class="p-1.5 font-medium">${cat}</td>
+              <td class="p-1.5 text-right font-mono">${fi}</td>
+              <td class="p-1.5 text-right font-mono">${(hi*100).toFixed(1).replace('.',',')}%</td>
+            </tr>
+          `;
+        }
+
+        html += `
+          <div class="border border-slate-200 rounded p-4 bg-slate-50 space-y-2">
+            <h3 class="font-bold text-slate-900 text-xs uppercase">${item.title}</h3>
+            <table class="w-full text-left text-xs border border-slate-300 bg-white">
+              <thead class="bg-slate-100 text-slate-800">
+                <tr>
+                  <th class="p-1.5 border-r">Categoría</th>
+                  <th class="p-1.5 text-right border-r">Absoluta ($f_i$)</th>
+                  <th class="p-1.5 text-right">Porcentaje ($h_i \\cdot 100\\%$)</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${filasHtml}
+              </tbody>
+            </table>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
     }
 
     function guardarTextosInforme() {
       const infoTextos = {
+        integrantes: document.getElementById('inf-integrantes').value,
+        fichaObj: document.getElementById('inf-ficha-obj').value,
+        fichaPob: document.getElementById('inf-ficha-pob').value,
+        fichaMuestreo: document.getElementById('inf-ficha-muestreo').value,
         interp: document.getElementById('inf-txt-interp').value,
         concl: document.getElementById('inf-txt-concl').value,
         recom: document.getElementById('inf-txt-recom').value
@@ -1502,6 +1554,10 @@
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
+          if(parsed.integrantes) document.getElementById('inf-integrantes').value = parsed.integrantes;
+          if(parsed.fichaObj) document.getElementById('inf-ficha-obj').value = parsed.fichaObj;
+          if(parsed.fichaPob) document.getElementById('inf-ficha-pob').value = parsed.fichaPob;
+          if(parsed.fichaMuestreo) document.getElementById('inf-ficha-muestreo').value = parsed.fichaMuestreo;
           document.getElementById('inf-txt-interp').value = parsed.interp || '';
           document.getElementById('inf-txt-concl').value = parsed.concl || '';
           document.getElementById('inf-txt-recom').value = parsed.recom || '';
