@@ -258,13 +258,18 @@
             </button>
             
             <button onclick="document.getElementById('input-file-csv').click()" class="bg-slate-700 hover:bg-slate-600 text-white font-medium text-xs px-3 py-2 rounded-lg transition border border-slate-600 flex items-center gap-1">
-              📤 Importar CSV & Unir
+              📤 Importar CSV y unir
             </button>
             <input type="file" id="input-file-csv" accept=".csv" class="hidden" onchange="importarCSV(event)">
 
-            <button onclick="descargarJSON()" class="bg-slate-700 hover:bg-slate-600 text-amber-400 font-medium text-xs px-3 py-2 rounded-lg transition border border-slate-600">
-              💾 Backup JSON
+            <button onclick="descargarJSON()" class="bg-slate-700 hover:bg-slate-600 text-amber-400 font-medium text-xs px-3 py-2 rounded-lg transition border border-slate-600 flex items-center gap-1">
+              💾 Descargar respaldo (.json)
             </button>
+
+            <button onclick="document.getElementById('input-file-json').click()" class="bg-slate-700 hover:bg-slate-600 text-amber-400 font-medium text-xs px-3 py-2 rounded-lg transition border border-slate-600 flex items-center gap-1">
+              🔄 Restaurar respaldo
+            </button>
+            <input type="file" id="input-file-json" accept=".json" class="hidden" onchange="restaurarJSON(event)">
 
             <button onclick="borrarTodaLaBase()" class="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 font-medium text-xs px-3 py-2 rounded-lg transition">
               🗑️ Limpiar Todo
@@ -507,7 +512,7 @@
           <div class="grid grid-cols-2 gap-4 text-xs bg-slate-50 p-3 rounded border border-slate-200">
             <div>
               <p><strong>Objetivo:</strong> Analizar la permanencia, niveles de congestión y perfil de uso de los usuarios en el Gimnasio UNIPAZ.</p>
-              <p class="mt-1"><strong>Población:</strong> Usuarios del Gimnasio UNIPAZ (estudiantes, docentes y personal administrative).</p>
+              <p class="mt-1"><strong>Población:</strong> Usuarios del Gimnasio UNIPAZ (estudiantes, docentes y personal administrativo).</p>
               <p class="mt-1"><strong>Muestra ($n$):</strong> <span id="inf-muestra-n">0</span> registros de campo colectados.</p>
             </div>
             <div>
@@ -575,15 +580,18 @@
     // INICIALIZACIÓN
     document.addEventListener('DOMContentLoaded', () => {
       cargarStorage();
-      setFechaHoraDefault();
-      renderTabla();
-      actualizarKPIs();
+      setFechaHoraActual();
+      if (registros.length === 0) {
+        generarDatosDemo(50);
+      } else {
+        actualizarDashboard();
+      }
       updateProbOptions('a');
       updateProbOptions('b');
       cargarTextosInforme();
     });
 
-    function setFechaHoraDefault() {
+    function setFechaHoraActual() {
       const now = new Date();
       document.getElementById('reg-fecha').value = now.toISOString().split('T')[0];
       const h = String(now.getHours()).padStart(2, '0');
@@ -591,86 +599,33 @@
       document.getElementById('reg-hora').value = `${h}:${m}`;
     }
 
-    function switchTab(tabName) {
+    function switchTab(tabId) {
       document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
       document.querySelectorAll('.nav-tab').forEach(el => {
-        el.classList.remove('border-emerald-400', 'text-emerald-400', 'bg-slate-800/50', 'active');
+        el.classList.remove('active', 'border-emerald-400', 'text-emerald-400', 'bg-slate-800/50');
         el.classList.add('border-transparent', 'text-slate-400');
       });
 
-      const target = document.getElementById(`tab-${tabName}`);
-      const btn = document.getElementById(`tab-btn-${tabName}`);
-
-      if (target) target.classList.remove('hidden');
-      if (btn) {
-        btn.classList.remove('border-transparent', 'text-slate-400');
-        btn.classList.add('border-emerald-400', 'text-emerald-400', 'bg-slate-800/50', 'active');
+      const tabTarget = document.getElementById(`tab-${tabId}`);
+      const btnTarget = document.getElementById(`tab-btn-${tabId}`);
+      
+      if(tabTarget) tabTarget.classList.remove('hidden');
+      if(btnTarget) {
+        btnTarget.classList.add('active', 'border-emerald-400', 'text-emerald-400', 'bg-slate-800/50');
+        btnTarget.classList.remove('border-transparent', 'text-slate-400');
       }
 
-      if (tabName === 'analisis') renderAnalisis();
-      if (tabName === 'probabilidad') { calcularProbabilidades(); renderContingencia(); }
-      if (tabName === 'informe') renderInforme();
+      if (tabId === 'analisis') renderAnalisis();
+      if (tabId === 'probabilidad') { calcularProbabilidades(); renderContingencia(); }
+      if (tabId === 'informe') renderInforme();
     }
 
     function calcularFranja(horaStr) {
-      if(!horaStr) return "N/A";
+      if (!horaStr) return "N/A";
       const h = parseInt(horaStr.split(':')[0], 10);
-      const hStr = String(h).padStart(2, '0');
-      return `${hStr}:00–${hStr}:59`;
+      return `${String(h).padStart(2, '0')}:00–${String(h).padStart(2, '0')}:59`;
     }
 
-    // LOCAL STORAGE
-    function cargarStorage() {
-      const stored = localStorage.getItem('estadidiapp_unipaz_gym_data_v2');
-      if (stored) {
-        try { registros = JSON.parse(stored); } catch (e) { registros = []; }
-      }
-    }
-
-    function guardarStorage() {
-      localStorage.setItem('estadidiapp_unipaz_gym_data_v2', JSON.stringify(registros));
-      actualizarKPIs();
-    }
-
-    // GENERADOR DE DATOS DE DEMOSTRACIÓN SIMULADOS
-    function generarDatosDemo(cantidad = 50) {
-      const zonas = ["Pesas libres", "Máquinas cardiovasculares", "Zona funcional"];
-      const frecs = ["Primera vez en la semana", "2 a 3 veces", "4 o más veces"];
-      const hidras = ["Sí", "No"];
-      const califs = ["1", "2", "3", "4", "5"];
-      
-      const fechas = ["2026-11-10", "2026-11-11", "2026-11-12", "2026-11-13", "2026-11-14"];
-      const horasPico = [7, 8, 9, 10, 14, 15, 16, 17, 18, 19];
-
-      let nuevos = [];
-      for (let i = 0; i < cantidad; i++) {
-        const h = horasPico[Math.floor(Math.random() * horasPico.length)];
-        const m = Math.floor(Math.random() * 60);
-        const horaStr = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
-        
-        // Simular permanencia con distribución razonable (media ~48min)
-        let t = Math.round((25 + Math.random() * 50 + (Math.random() > 0.8 ? 30 : 0)) * 10) / 10;
-
-        nuevos.push({
-          id: Date.now() + i,
-          fecha: fechas[Math.floor(Math.random() * fechas.length)],
-          hora: horaStr,
-          franja: calcularFranja(horaStr),
-          zona: zonas[Math.floor(Math.random() * zonas.length)],
-          tiempo: t,
-          frecuencia: frecs[Math.floor(Math.random() * frecs.length)],
-          hidratacion: Math.random() > 0.25 ? "Sí" : "No",
-          calificacion: califs[Math.floor(Math.random() * califs.length)]
-        });
-      }
-
-      registros = [...registros, ...nuevos];
-      guardarStorage();
-      renderTabla();
-      alert(`⚡ ¡Se generaron y agregaron ${cantidad} datos de prueba realistas!`);
-    }
-
-    // FORMULARIO CRUD
     function guardarNuevoRegistro(e) {
       e.preventDefault();
       const nuevo = {
@@ -687,222 +642,366 @@
 
       registros.push(nuevo);
       guardarStorage();
-      renderTabla();
+      actualizarDashboard();
+      limpiarFormulario();
+      alert('✅ Observación guardada exitosamente.');
+    }
+
+    function limpiarFormulario() {
       document.getElementById('form-registro').reset();
-      setFechaHoraDefault();
-      alert('✅ Registro almacenado correctamente.');
+      setFechaHoraActual();
     }
 
-    function eliminarRegistro(id) {
-      if (confirm('¿Eliminar esta observación permanentemente?')) {
-        registros = registros.filter(r => r.id !== id);
-        guardarStorage();
-        renderTabla();
+    function guardarStorage() {
+      localStorage.setItem('estadidiapp_gym_v2_datos', JSON.stringify(registros));
+    }
+
+    function cargarStorage() {
+      const datos = localStorage.getItem('estadidiapp_gym_v2_datos');
+      if (datos) {
+        try { registros = JSON.parse(datos); } catch(err) { registros = []; }
       }
     }
 
-    function borrarTodaLaBase() {
-      if (confirm('⚠️ ¿Desea vaciar TODOS los datos guardados?')) {
-        registros = [];
-        guardarStorage();
-        renderTabla();
-      }
-    }
-
-    // RENDERIZADO DE TABLA & KPIS
-    function renderTabla() {
-      const tbody = document.getElementById('tabla-registros-body');
+    function actualizarDashboard() {
       document.getElementById('header-total-badge').innerText = registros.length;
+      renderTabla();
 
-      const busqueda = (document.getElementById('tabla-busqueda')?.value || '').toLowerCase();
-      const limite = parseInt(document.getElementById('tabla-paginacion')?.value || '50', 10);
-
-      let filtrados = registros.filter(r => {
-        return Object.values(r).some(val => String(val).toLowerCase().includes(busqueda));
-      });
-
-      if (filtrados.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="10" class="p-4 text-center text-slate-500">No hay registros coincidentes.</td></tr>`;
-        return;
-      }
-
-      tbody.innerHTML = filtrados.slice(0, limite).reverse().map((r, idx) => `
-        <tr class="hover:bg-slate-800/80 transition border-b border-slate-700/40">
-          <td class="p-3 text-center font-mono text-slate-500">${filtrados.length - idx}</td>
-          <td class="p-3 font-mono">${r.fecha}</td>
-          <td class="p-3 font-mono text-slate-400">${r.hora}</td>
-          <td class="p-3 font-semibold text-emerald-400">${r.franja}</td>
-          <td class="p-3 font-medium">${r.zona}</td>
-          <td class="p-3 text-right font-bold text-amber-400 font-mono">${r.tiempo.toLocaleString('es-CO')} min</td>
-          <td class="p-3">${r.frecuencia}</td>
-          <td class="p-3 text-center">
-            <span class="px-2 py-0.5 rounded text-[10px] font-bold ${r.hidratacion === 'Sí' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-slate-700 text-slate-400'}">
-              ${r.hidratacion}
-            </span>
-          </td>
-          <td class="p-3 text-center font-bold text-yellow-400">${r.calificacion} ★</td>
-          <td class="p-3 text-center">
-            <button onclick="eliminarRegistro(${r.id})" class="text-red-400 hover:text-red-300 font-bold px-1.5 py-0.5 rounded hover:bg-red-500/10 transition">✕</button>
-          </td>
-        </tr>
-      `).join('');
-    }
-
-    function actualizarKPIs() {
       if (registros.length === 0) {
-        document.getElementById('kpi-promedio').innerText = '0.0 min';
+        document.getElementById('kpi-promedio').innerHTML = `0.0 <span class="text-xs font-medium text-slate-400">min</span>`;
         document.getElementById('kpi-zona').innerText = '--';
         document.getElementById('kpi-franja').innerText = '--';
         document.getElementById('kpi-hidratacion').innerText = '0%';
         return;
       }
 
-      const n = registros.length;
+      // KPI Permanencia
       const tiempos = registros.map(r => r.tiempo);
-      const media = tiempos.reduce((a,b) => a+b, 0) / n;
-      const s2 = n > 1 ? tiempos.reduce((a,b) => a + Math.pow(b-media, 2), 0) / (n - 1) : 0;
-      const s = Math.sqrt(s2);
+      const media = tiempos.reduce((a,b)=>a+b,0) / tiempos.length;
+      const s = Math.sqrt(tiempos.reduce((a,b)=>a+Math.pow(b-media,2),0)/(tiempos.length-1 || 1));
+      document.getElementById('kpi-promedio').innerHTML = `${media.toFixed(1).replace('.',',')} <span class="text-xs font-medium text-slate-400">min</span>`;
+      document.getElementById('kpi-promedio-sub').innerText = `Desv. Estándar: ±${s.toFixed(1).replace('.',',')} min`;
 
-      document.getElementById('kpi-promedio').innerHTML = `${media.toFixed(1)} <span class="text-xs font-medium text-slate-400">min</span>`;
-      document.getElementById('kpi-promedio-sub').innerText = `Desv. estándar: ${s.toFixed(1)} min`;
+      // KPI Zona Moda
+      const frecZonas = {};
+      registros.forEach(r => frecZonas[r.zona] = (frecZonas[r.zona]||0)+1);
+      let maxZ = '', maxZF = -1;
+      for(let z in frecZonas) { if(frecZonas[z]>maxZF){ maxZF=frecZonas[z]; maxZ=z; } }
+      document.getElementById('kpi-zona').innerText = maxZ;
+      document.getElementById('kpi-zona-sub').innerText = `${maxZF} observaciones (${((maxZF/registros.length)*100).toFixed(0)}%)`;
 
-      // Moda Zona
-      const frecZona = {};
-      registros.forEach(r => frecZona[r.zona] = (frecZona[r.zona] || 0) + 1);
-      let topZona = Object.keys(frecZona).reduce((a, b) => frecZona[a] > frecZona[b] ? a : b, '--');
-      document.getElementById('kpi-zona').innerText = topZona;
-
-      // Moda Franja
+      // KPI Franja Horaria
       const frecFranja = {};
-      registros.forEach(r => frecFranja[r.franja] = (frecFranja[r.franja] || 0) + 1);
-      let topFranja = Object.keys(frecFranja).reduce((a, b) => frecFranja[a] > frecFranja[b] ? a : b, '--');
-      document.getElementById('kpi-franja').innerText = topFranja;
+      registros.forEach(r => frecFranja[r.franja] = (frecFranja[r.franja]||0)+1);
+      let maxF = '', maxFF = -1;
+      for(let f in frecFranja) { if(frecFranja[f]>maxFF){ maxFF=frecFranja[f]; maxF=f; } }
+      document.getElementById('kpi-franja').innerText = maxF;
+      document.getElementById('kpi-franja-sub').innerText = `Horario pico (${maxFF} personas)`;
 
-      // Hidratación
-      const hidraSi = registros.filter(r => r.hidratacion === 'Sí').length;
-      document.getElementById('kpi-hidratacion').innerText = `${((hidraSi/n)*100).toFixed(0)}%`;
+      // KPI Hidratación
+      const siHidra = registros.filter(r => r.hidratacion === 'Sí').length;
+      const pctH = (siHidra / registros.length) * 100;
+      document.getElementById('kpi-hidratacion').innerText = `${pctH.toFixed(0)}%`;
+      document.getElementById('kpi-hidratacion-sub').innerText = `${siHidra} de ${registros.length} usuarios`;
     }
 
-    // EXPORTAR & IMPORTAR
-    function exportarCSV() {
-      if (registros.length === 0) return alert('No hay registros para exportar.');
-      let csv = '\uFEFFN.°;Fecha;Hora;Franja horaria;Zona del gimnasio;Tiempo de permanencia (min);Frecuencia de asistencia;Elemento de hidratación;Calificación del estado de equipos\n';
-      registros.forEach((r, i) => {
-        csv += `${i+1};${r.fecha};${r.hora};${r.franja};${r.zona};${r.tiempo.toString().replace('.',',')};${r.frecuencia};${r.hidratacion};${r.calificacion}\n`;
+    function renderTabla() {
+      const tbody = document.getElementById('tabla-registros-body');
+      tbody.innerHTML = '';
+
+      const query = document.getElementById('tabla-busqueda').value.toLowerCase();
+      const limit = parseInt(document.getElementById('tabla-paginacion').value, 10);
+
+      const filtrados = registros.filter(r => {
+        return r.fecha.includes(query) ||
+               r.hora.includes(query) ||
+               r.franja.toLowerCase().includes(query) ||
+               r.zona.toLowerCase().includes(query) ||
+               r.tiempo.toString().includes(query) ||
+               r.frecuencia.toLowerCase().includes(query) ||
+               r.hidratacion.toLowerCase().includes(query) ||
+               r.calificacion.includes(query);
       });
 
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      filtrados.slice().reverse().slice(0, limit).forEach((r, idx) => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-700/30 transition";
+        tr.innerHTML = `
+          <td class="p-3 text-center font-bold text-slate-500">${filtrados.length - idx}</td>
+          <td class="p-3 whitespace-nowrap">${r.fecha}</td>
+          <td class="p-3 font-mono text-emerald-400">${r.hora}</td>
+          <td class="p-3"><span class="bg-slate-900 px-2 py-0.5 rounded text-[10px] text-amber-400 border border-slate-700">${r.franja}</span></td>
+          <td class="p-3 font-medium text-white">${r.zona}</td>
+          <td class="p-3 text-right font-mono font-bold text-emerald-300">${r.tiempo.toLocaleString('es-CO')}</td>
+          <td class="p-3">${r.frecuencia}</td>
+          <td class="p-3 text-center">
+            <span class="px-2 py-0.5 rounded text-[10px] font-semibold ${r.hidratacion==='Sí'?'bg-emerald-500/20 text-emerald-400':'bg-red-500/20 text-red-400'}">${r.hidratacion}</span>
+          </td>
+          <td class="p-3 text-center font-bold text-amber-400">${r.calificacion} ★</td>
+          <td class="p-3 text-center">
+            <button onclick="eliminarRegistro(${r.id})" class="text-red-400 hover:text-red-300 p-1 rounded hover:bg-red-500/10 transition">🗑️</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function eliminarRegistro(id) {
+      if (confirm('¿Deseas eliminar este registro de la base de datos?')) {
+        registros = registros.filter(r => r.id !== id);
+        guardarStorage();
+        actualizarDashboard();
+      }
+    }
+
+    function borrarTodaLaBase() {
+      if (confirm('⚠️ ¿Estás seguro de BORRAR TODOS los registros de campo? Esta acción no se puede deshacer.')) {
+        registros = [];
+        guardarStorage();
+        actualizarDashboard();
+      }
+    }
+
+    // ==================== EXPORTACIÓN E IMPORTACIÓN (ETAPA 2) ====================
+
+    function exportarCSV() {
+      if (registros.length === 0) return alert('No hay registros en la base de datos para exportar.');
+      
+      // UTF-8 BOM para abrir correctamente tildes y caracteres en Excel en español
+      let csvContent = '\uFEFF'; 
+      csvContent += 'Fecha;Hora;Franja horaria;Zona del gimnasio;Tiempo de permanencia (min);Frecuencia de asistencia;Uso de elemento de hidratación;Calificación del estado de equipos\n';
+
+      registros.forEach(r => {
+        const tiempoFormat = r.tiempo.toString().replace('.', ',');
+        csvContent += `${r.fecha};${r.hora};${r.franja};${r.zona};${tiempoFormat};${r.frecuencia};${r.hidratacion};${r.calificacion}\n`;
+      });
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = `gimnasio_unipaz_datos_${new Date().toISOString().split('T')[0]}.csv`;
+      link.setAttribute('href', url);
+      link.setAttribute('download', `base_datos_gimnasio_unipaz_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
       link.click();
+      document.body.removeChild(link);
     }
 
     function importarCSV(e) {
       const file = e.target.files[0];
       if (!file) return;
+
       const reader = new FileReader();
       reader.onload = function(evt) {
-        const lines = evt.target.result.split(/\r\n|\n/);
-        let count = 0;
+        const content = evt.target.result;
+        const lines = content.split(/\r\n|\n/);
+        
+        if (lines.length < 2) return alert('El archivo CSV está vacío o no contiene registros.');
+
+        // Verificar columnas en la primera línea (cabecera)
+        const header = lines[0].replace('\uFEFF', '').trim();
+        const colsHeader = header.split(';');
+
+        if (colsHeader.length < 8) {
+          return alert('⚠️ Error de formato: El archivo CSV no tiene las columnas requeridas por esta aplicación.');
+        }
+
+        let importadosCount = 0;
         for (let i = 1; i < lines.length; i++) {
-          if (!lines[i].trim()) continue;
-          const cols = lines[i].split(';');
-          if (cols.length >= 9) {
-            const t = parseFloat(cols[5].replace(',', '.'));
-            if (!isNaN(t)) {
+          const line = lines[i].trim();
+          if (!line) continue;
+          const cols = line.split(';');
+          
+          if (cols.length >= 8) {
+            const fechaVal = cols[0].trim();
+            const horaVal = cols[1].trim();
+            const franjaVal = cols[2].trim() || calcularFranja(horaVal);
+            const zonaVal = cols[3].trim();
+            const tiempoVal = parseFloat(cols[4].replace(',', '.'));
+            const frecVal = cols[5].trim();
+            const hidraVal = cols[6].trim();
+            const califVal = cols[7].trim();
+
+            if (fechaVal && !isNaN(tiempoVal)) {
               registros.push({
-                id: Date.now() + i,
-                fecha: cols[1].trim(),
-                hora: cols[2].trim(),
-                franja: cols[3].trim() || calcularFranja(cols[2].trim()),
-                zona: cols[4].trim(),
-                tiempo: t,
-                frecuencia: cols[6].trim(),
-                hidratacion: cols[7].trim(),
-                calificacion: cols[8].trim()
+                id: Date.now() + i + Math.random(),
+                fecha: fechaVal,
+                hora: horaVal,
+                franja: franjaVal,
+                zona: zonaVal,
+                tiempo: tiempoVal,
+                frecuencia: frecVal,
+                hidratacion: hidraVal,
+                calificacion: califVal
               });
-              count++;
+              importadosCount++;
             }
           }
         }
+
         guardarStorage();
-        renderTabla();
-        alert(`✅ Se importaron y unieron ${count} observaciones exitosamente.`);
+        actualizarDashboard();
+        alert(`✅ Se importaron exitosamente ${importadosCount} nuevos registros a tu base de datos.`);
+        e.target.value = ''; // Reset input
+      };
+      reader.readAsText(file, 'UTF-8');
+    }
+
+    function descargarJSON() {
+      if (registros.length === 0) return alert('No hay datos para respaldar.');
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(registros, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `respaldo_gimnasio_unipaz_${new Date().toISOString().split('T')[0]}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
+
+    function restaurarJSON(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        try {
+          const importedData = JSON.parse(evt.target.result);
+          if (Array.isArray(importedData)) {
+            registros = importedData;
+            guardarStorage();
+            actualizarDashboard();
+            alert('✅ Respaldo restaurado con éxito.');
+          } else {
+            alert('⚠️ El archivo JSON no tiene una estructura válida de registros.');
+          }
+        } catch(err) {
+          alert('⚠️ Error al leer el archivo JSON.');
+        }
+        e.target.value = '';
       };
       reader.readAsText(file);
     }
 
-    function descargarJSON() {
-      const blob = new Blob([JSON.stringify(registros, null, 2)], { type: 'application/json' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = `backup_gimnasio_unipaz.json`;
-      link.click();
+    function generarDatosDemo(cant) {
+      const zonas = ["Pesas libres", "Máquinas cardiovasculares", "Zona funcional"];
+      const frecs = ["Primera vez en la semana", "2 a 3 veces", "4 o más veces"];
+      const hidras = ["Sí", "No"];
+      const califs = ["1", "2", "3", "4", "5"];
+
+      const hoy = new Date();
+      for (let i = 0; i < cant; i++) {
+        const d = new Date(hoy);
+        d.setDate(d.getDate() - Math.floor(Math.random() * 5));
+        const horaH = 6 + Math.floor(Math.random() * 14);
+        const horaM = Math.floor(Math.random() * 60);
+        const horaStr = `${String(horaH).padStart(2, '0')}:${String(horaM).padStart(2, '0')}`;
+        
+        let t = 20 + Math.random() * 70;
+        if (Math.random() < 0.15) t += 30; // Posible sesgo positivo
+
+        registros.push({
+          id: Date.now() + i + Math.random(),
+          fecha: d.toISOString().split('T')[0],
+          hora: horaStr,
+          franja: calcularFranja(horaStr),
+          zona: zonas[Math.floor(Math.random() * zonas.length)],
+          tiempo: parseFloat(t.toFixed(1)),
+          frecuencia: frecs[Math.floor(Math.random() * frecs.length)],
+          hidratacion: Math.random() > 0.3 ? "Sí" : "No",
+          calificacion: califs[Math.floor(Math.random() * califs.length)]
+        });
+      }
+
+      guardarStorage();
+      actualizarDashboard();
     }
 
-    // ==================== ANÁLISIS DESCRIPTIVO ====================
+    // ==================== TAB 2: ANÁLISIS DESCRIPTIVO (UF2) ====================
+
     function updateFiltroValores() {
-      const v = document.getElementById('select-filtro-var').value;
-      const target = document.getElementById('select-filtro-val');
-      if (v === 'ninguno') {
-        target.disabled = true;
-        target.innerHTML = '<option value="">-- Todos --</option>';
+      const fVar = document.getElementById('select-filtro-var').value;
+      const fValSelect = document.getElementById('select-filtro-val');
+      fValSelect.innerHTML = '<option value="">-- Todos --</option>';
+
+      if (fVar === 'ninguno') {
+        fValSelect.disabled = true;
       } else {
-        target.disabled = false;
-        let cats = getCategoriasVar(v);
-        target.innerHTML = cats.map(c => `<option value="${c}">${c}</option>`).join('');
+        fValSelect.disabled = false;
+        let opts = [];
+        if (fVar === 'zona') opts = ["Pesas libres", "Máquinas cardiovasculares", "Zona funcional"];
+        if (fVar === 'frecuencia') opts = ["Primera vez en la semana", "2 a 3 veces", "4 o más veces"];
+        if (fVar === 'hidratacion') opts = ["Sí", "No"];
+
+        opts.forEach(o => {
+          fValSelect.innerHTML += `<option value="${o}">${o}</option>`;
+        });
       }
       renderAnalisis();
     }
 
-    function getDatosFiltrados() {
-      const fVar = document.getElementById('select-filtro-var').value;
-      const fVal = document.getElementById('select-filtro-val').value;
-      if (fVar === 'ninguno' || !fVal) return registros;
-      return registros.filter(r => r[fVar] === fVal);
-    }
-
     function renderAnalisis() {
       const container = document.getElementById('contenedor-analisis-resultados');
-      const dataSet = getDatosFiltrados();
-
-      if (dataSet.length === 0) {
-        container.innerHTML = `<div class="bg-amber-500/10 border border-amber-500/30 text-amber-400 p-4 rounded-xl text-xs">No hay observaciones cargadas para generar el análisis descriptivo.</div>`;
+      if (registros.length === 0) {
+        container.innerHTML = `
+          <div class="bg-slate-800/60 border border-slate-700 p-6 rounded-2xl text-center text-slate-400 text-xs">
+            No hay observaciones registradas en la base de datos para analizar. Usa el botón "⚡ Generar 50 Demos" para probar.
+          </div>
+        `;
         return;
       }
 
-      const varKey = document.getElementById('select-var-analisis').value;
+      const vSelect = document.getElementById('select-var-analisis').value;
+      const fVar = document.getElementById('select-filtro-var').value;
+      const fVal = document.getElementById('select-filtro-val').value;
 
-      if (varKey === 'tiempo') {
-        renderCuantitativo(container, dataSet);
+      let dataset = registros;
+      if (fVar !== 'ninguno' && fVal) {
+        dataset = registros.filter(r => r[fVar] === fVal);
+      }
+
+      if (dataset.length === 0) {
+        container.innerHTML = `<div class="p-6 text-center text-slate-400 text-xs">No hay datos que coincidan con el filtro seleccionado.</div>`;
+        return;
+      }
+
+      if (vSelect === 'tiempo') {
+        renderAnalisisCuantitativo(dataset, container);
       } else {
-        renderCualitativo(container, dataSet, varKey);
+        renderAnalisisCualitativo(dataset, vSelect, container);
       }
     }
 
-    function renderCuantitativo(container, dataSet) {
-      const datos = dataSet.map(r => r.tiempo).sort((a,b) => a-b);
+    function renderAnalisisCuantitativo(dataset, container) {
+      const datos = dataset.map(r => r.tiempo).sort((a,b) => a-b);
       const n = datos.length;
       const suma = datos.reduce((a,b) => a+b, 0);
       const media = suma / n;
 
-      let mediana = (n % 2 === 0) ? (datos[n/2 - 1] + datos[n/2]) / 2 : datos[Math.floor(n/2)];
+      // Mediana
+      let mediana = 0;
+      if (n % 2 === 0) mediana = (datos[n/2 - 1] + datos[n/2]) / 2;
+      else mediana = datos[Math.floor(n/2)];
 
+      // Moda
       const frecs = {};
       datos.forEach(x => frecs[x] = (frecs[x] || 0) + 1);
-      let maxFrec = Math.max(...Object.values(frecs));
-      let modas = maxFrec > 1 ? Object.keys(frecs).filter(k => frecs[k] === maxFrec).map(Number) : [];
+      let maxFrec = 0;
+      for (let k in frecs) if (frecs[k] > maxFrec) maxFrec = frecs[k];
+      let modas = [];
+      if (maxFrec > 1) {
+        for (let k in frecs) if (frecs[k] === maxFrec) modas.push(Number(k));
+      }
 
       const min = datos[0];
       const max = datos[n-1];
       const rango = max - min;
 
+      // Varianza y Desviación Muestral (divide entre n-1)
       const s2 = n > 1 ? datos.reduce((acc, val) => acc + Math.pow(val - media, 2), 0) / (n - 1) : 0;
       const s = Math.sqrt(s2);
       const cv = (s / media) * 100;
 
-      function getCuartilInc(arr, p) {
+      // Cuartiles Método CUARTIL.INC Excel
+      function getPercentileInc(arr, p) {
         if (arr.length === 1) return arr[0];
         const rank = p * (arr.length - 1);
         const low = Math.floor(rank);
@@ -911,71 +1010,78 @@
         return arr[low] + weight * (arr[high] - arr[low]);
       }
 
-      const q1 = getCuartilInc(datos, 0.25);
+      const q1 = getPercentileInc(datos, 0.25);
       const q2 = mediana;
-      const q3 = getCuartilInc(datos, 0.75);
+      const q3 = getPercentileInc(datos, 0.75);
       const ric = q3 - q1;
 
-      // Sturges
+      // Tabla de Frecuencias por Sturges
       const kClasses = Math.max(1, Math.round(1 + 3.322 * Math.log10(n)));
-      const amp = parseFloat((rango / kClasses).toFixed(1)) || 1.0;
+      const ampRaw = rango / kClasses;
+      const amp = parseFloat(ampRaw.toFixed(1)) || 1;
 
       let clases = [];
       let curLi = min;
       let acFi = 0;
-
       for (let i = 0; i < kClasses; i++) {
-        let curLs = (i === kClasses - 1) ? max : curLi + amp;
-        let fi = datos.filter(x => (i === kClasses - 1) ? (x >= curLi && x <= curLs) : (x >= curLi && x < curLs)).length;
+        let curLs = i === kClasses - 1 ? max : curLi + amp;
+        let fi = datos.filter(x => i === kClasses - 1 ? (x >= curLi && x <= curLs) : (x >= curLi && x < curLs)).length;
         acFi += fi;
         let xi = (curLi + curLs) / 2;
-        clases.push({ i: i + 1, Li: curLi, Ls: curLs, xi, fi, Fi: acFi, hi: fi/n, Hi: acFi/n });
+        let hi = fi / n;
+        let Hi = acFi / n;
+        clases.push({ i: i+1, Li: curLi, Ls: curLs, xi, fi, Fi: acFi, hi, Hi });
         curLi = curLs;
       }
 
       container.innerHTML = `
-        <!-- MEDIDAS PRINCIPALES -->
+        <!-- MEDIDAS RESUMEN EN CARDS -->
         <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-          <div class="bg-slate-800/90 border border-slate-700 p-3 rounded-xl text-center">
-            <span class="text-[10px] text-slate-400 block font-bold uppercase">Muestra (n)</span>
-            <span class="text-xl font-extrabold text-white">${n}</span>
+          <div class="bg-slate-900/90 border border-slate-700/80 p-3 rounded-xl text-center">
+            <span class="text-[10px] text-slate-400 block font-semibold">Muestra ($n$)</span>
+            <span class="text-lg font-black text-white">${n}</span>
           </div>
-          <div class="bg-slate-800/90 border border-slate-700 p-3 rounded-xl text-center">
-            <span class="text-[10px] text-slate-400 block font-bold uppercase">Media (X̄)</span>
-            <span class="text-xl font-extrabold text-emerald-400">${media.toFixed(2).replace('.',',')}</span>
+          <div class="bg-slate-900/90 border border-slate-700/80 p-3 rounded-xl text-center">
+            <span class="text-[10px] text-slate-400 block font-semibold">Media (X̄)</span>
+            <span class="text-lg font-black text-emerald-400">${media.toFixed(2).replace('.',',')}</span>
           </div>
-          <div class="bg-slate-800/90 border border-slate-700 p-3 rounded-xl text-center">
-            <span class="text-[10px] text-slate-400 block font-bold uppercase">Mediana (Me)</span>
-            <span class="text-xl font-extrabold text-amber-400">${mediana.toFixed(2).replace('.',',')}</span>
+          <div class="bg-slate-900/90 border border-slate-700/80 p-3 rounded-xl text-center">
+            <span class="text-[10px] text-slate-400 block font-semibold">Mediana (Me)</span>
+            <span class="text-lg font-black text-cyan-400">${mediana.toFixed(2).replace('.',',')}</span>
           </div>
-          <div class="bg-slate-800/90 border border-slate-700 p-3 rounded-xl text-center">
-            <span class="text-[10px] text-slate-400 block font-bold uppercase">Desv. Estándar (s)</span>
-            <span class="text-xl font-extrabold text-cyan-400">${s.toFixed(2).replace('.',',')}</span>
+          <div class="bg-slate-900/90 border border-slate-700/80 p-3 rounded-xl text-center">
+            <span class="text-[10px] text-slate-400 block font-semibold">Moda (Mo)</span>
+            <span class="text-sm font-black text-amber-400 truncate block">${modas.length > 0 ? modas.join('; ') : 'Sin moda'}</span>
           </div>
-          <div class="bg-slate-800/90 border border-slate-700 p-3 rounded-xl text-center">
-            <span class="text-[10px] text-slate-400 block font-bold uppercase">CV (%)</span>
-            <span class="text-xl font-extrabold text-purple-400">${cv.toFixed(2).replace('.',',')}%</span>
+          <div class="bg-slate-900/90 border border-slate-700/80 p-3 rounded-xl text-center">
+            <span class="text-[10px] text-slate-400 block font-semibold">Desv. Estándar (s)</span>
+            <span class="text-lg font-black text-purple-400">${s.toFixed(2).replace('.',',')}</span>
           </div>
-          <div class="bg-slate-800/90 border border-slate-700 p-3 rounded-xl text-center">
-            <span class="text-[10px] text-slate-400 block font-bold uppercase">RIC (Q3-Q1)</span>
-            <span class="text-xl font-extrabold text-slate-200">${ric.toFixed(2).replace('.',',')}</span>
+          <div class="bg-slate-900/90 border border-slate-700/80 p-3 rounded-xl text-center">
+            <span class="text-[10px] text-slate-400 block font-semibold">Coef. Variación</span>
+            <span class="text-lg font-black text-emerald-400">${cv.toFixed(2).replace('.',',')}%</span>
           </div>
         </div>
 
-        <!-- TABLA MEDIDAS COMPLETA -->
+        <!-- TABLA COMPLETA DE MEDIDAS -->
         <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-3">
-          <h3 class="text-sm font-bold text-white border-b border-slate-700 pb-2">Resumen Consolidado de Medidas de Posición y Dispersión</h3>
-          <div class="overflow-x-auto">
-            <table class="w-full text-xs text-left text-slate-300">
-              <thead class="bg-slate-900 text-slate-400 text-[10px] uppercase">
-                <tr><th>Medida Estadistica</th><th>Valor Calculado</th><th>Fórmula Aplicada / Interpretación</th></tr>
+          <h3 class="text-sm font-bold text-white">Consolidado Descriptivo Cuantitativo</h3>
+          <div class="overflow-x-auto rounded-xl border border-slate-700">
+            <table class="w-full text-left text-xs text-slate-300">
+              <thead class="bg-slate-900 text-slate-400 uppercase text-[10px]">
+                <tr>
+                  <th class="p-3">Medida Estadística</th>
+                  <th class="p-3 text-right">Valor Calculado</th>
+                  <th class="p-3">Fórmula / Descripción de Método</th>
+                </tr>
               </thead>
-              <tbody class="divide-y divide-slate-700/60">
-                <tr><td class="p-2 font-semibold text-white">Suma Total ∑x</td><td class="p-2 font-mono text-emerald-400">${suma.toFixed(2).replace('.',',')} min</td><td class="p-2 text-slate-400">Tiempo acumulado de todos los usuarios</td></tr>
-                <tr><td class="p-2 font-semibold text-white">Límites (Mín / Máx)</td><td class="p-2 font-mono">${min} min / ${max} min</td><td class="p-2 text-slate-400">Rango R = ${rango.toFixed(2).replace('.',',')} min</td></tr>
-                <tr><td class="p-2 font-semibold text-white">Varianza Muestral s²</td><td class="p-2 font-mono">${s2.toFixed(2).replace('.',',')}</td><td class="p-2 text-slate-400">s² = ∑(x - X̄)² ÷ (n - 1)</td></tr>
-                <tr><td class="p-2 font-semibold text-white">Moda Mo</td><td class="p-2 font-mono">${modas.length > 0 ? modas.join('; ') + ' min' : 'Sin moda'}</td><td class="p-2 text-slate-400">Valor(es) de mayor frecuencia de repetición</td></tr>
-                <tr><td class="p-2 font-semibold text-white">Cuartiles (Q1, Q2, Q3)</td><td class="p-2 font-mono">${q1.toFixed(2).replace('.',',')} | ${q2.toFixed(2).replace('.',',')} | ${q3.toFixed(2).replace('.',',')}</td><td class="p-2 text-slate-400">Método CUARTIL.INC Excel (25%, 50%, 75%)</td></tr>
+              <tbody class="divide-y divide-slate-700/50 bg-slate-900/40">
+                <tr><td class="p-2.5 font-semibold">Suma Total (∑x)</td><td class="p-2.5 text-right font-mono font-bold text-emerald-400">${suma.toFixed(2).replace('.',',')}</td><td class="p-2.5 text-slate-400">Total acumulado de minutos de permanencia</td></tr>
+                <tr><td class="p-2.5 font-semibold">Mínimo / Máximo</td><td class="p-2.5 text-right font-mono text-bold text-white">${min} / ${max}</td><td class="p-2.5 text-slate-400">Valores extremos observados</td></tr>
+                <tr><td class="p-2.5 font-semibold">Rango (R)</td><td class="p-2.5 text-right font-mono text-bold text-white">${rango.toFixed(2).replace('.',',')}</td><td class="p-2.5 text-slate-400">R = Máx - Mín</td></tr>
+                <tr><td class="p-2.5 font-semibold">Varianza Muestral (s²)</td><td class="p-2.5 text-right font-mono text-bold text-white">${s2.toFixed(2).replace('.',',')}</td><td class="p-2.5 text-slate-400">s² = ∑(x - X̄)² ÷ (n - 1)</td></tr>
+                <tr><td class="p-2.5 font-semibold">Cuartiles (Q1, Q2, Q3)</td><td class="p-2.5 text-right font-mono text-bold text-amber-400">${q1.toFixed(2).replace('.',',')} | ${q2.toFixed(2).replace('.',',')} | ${q3.toFixed(2).replace('.',',')}</td><td class="p-2.5 text-slate-400">Algoritmo CUARTIL.INC de Excel</td></tr>
+                <tr><td class="p-2.5 font-semibold">Rango Intercuartílico (RIC)</td><td class="p-2.5 text-right font-mono text-bold text-white">${ric.toFixed(2).replace('.',',')}</td><td class="p-2.5 text-slate-400">RIC = Q3 - Q1 (Dispersión del 50% central)</td></tr>
               </tbody>
             </table>
           </div>
@@ -983,25 +1089,33 @@
 
         <!-- TABLA DE FRECUENCIAS STURGES -->
         <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-3">
-          <div class="flex justify-between items-center border-b border-slate-700 pb-2">
-            <h3 class="text-sm font-bold text-white">Tabla de Frecuencias por Sturges</h3>
-            <span class="text-xs font-mono text-slate-400">Clases k = ${kClasses} | Amplitud A = ${amp.toFixed(2).replace('.',',')}</span>
+          <div class="flex justify-between items-center">
+            <h3 class="text-sm font-bold text-white">Tabla de Frecuencias para Datos Agrupados (Regla de Sturges)</h3>
+            <span class="text-xs text-slate-400">Número de clases $k = ${kClasses}$, Amplitud $A = ${amp.toFixed(2).replace('.',',')}$</span>
           </div>
-          <div class="overflow-x-auto">
-            <table class="w-full text-xs text-left text-slate-300">
-              <thead class="bg-slate-900 text-slate-400 text-[10px] uppercase">
-                <tr><th>Clase</th><th>Intervalo [Li, Ls)</th><th>Marca xi</th><th>fi</th><th>Fi</th><th>hi (%)</th><th>Hi (%)</th></tr>
+          <div class="overflow-x-auto rounded-xl border border-slate-700">
+            <table class="w-full text-left text-xs text-slate-300">
+              <thead class="bg-slate-900 text-slate-400 uppercase text-[10px]">
+                <tr>
+                  <th class="p-3 text-center">Clase</th>
+                  <th class="p-3">Intervalo [Li, Ls)</th>
+                  <th class="p-3 text-right">Marca de Clase (xi)</th>
+                  <th class="p-3 text-right">fi</th>
+                  <th class="p-3 text-right">Fi</th>
+                  <th class="p-3 text-right">hi (%)</th>
+                  <th class="p-3 text-right">Hi (%)</th>
+                </tr>
               </thead>
-              <tbody class="divide-y divide-slate-700/60 font-mono">
+              <tbody class="divide-y divide-slate-700/50 bg-slate-900/40">
                 ${clases.map(c => `
                   <tr>
-                    <td class="p-2 text-center text-white font-bold">${c.i}</td>
-                    <td class="p-2 text-emerald-400">[${c.Li.toFixed(1).replace('.',',')} - ${c.Ls.toFixed(1).replace('.',',')}${c.i === kClasses ? ']' : ')'}</td>
-                    <td class="p-2">${c.xi.toFixed(2).replace('.',',')}</td>
-                    <td class="p-2 font-bold text-white">${c.fi}</td>
-                    <td class="p-2">${c.Fi}</td>
-                    <td class="p-2">${(c.hi * 100).toFixed(2).replace('.',',')}%</td>
-                    <td class="p-2">${(c.Hi * 100).toFixed(2).replace('.',',')}%</td>
+                    <td class="p-2.5 text-center font-bold text-slate-500">${c.i}</td>
+                    <td class="p-2.5 font-mono text-emerald-400">[${c.Li.toFixed(1).replace('.',',')} - ${c.Ls.toFixed(1).replace('.',',')}${c.i===kClasses?']':')'}</td>
+                    <td class="p-2.5 text-right font-mono">${c.xi.toFixed(2).replace('.',',')}</td>
+                    <td class="p-2.5 text-right font-bold text-white">${c.fi}</td>
+                    <td class="p-2.5 text-right font-mono text-slate-400">${c.Fi}</td>
+                    <td class="p-2.5 text-right font-mono text-cyan-400">${(c.hi*100).toFixed(2).replace('.',',')}%</td>
+                    <td class="p-2.5 text-right font-mono text-slate-400">${(c.Hi*100).toFixed(2).replace('.',',')}%</td>
                   </tr>
                 `).join('')}
               </tbody>
@@ -1009,39 +1123,51 @@
           </div>
         </div>
 
-        <!-- GRÁFICOS SVG INTERACTIVOS -->
+        <!-- GRÁFICOS SVG -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-5 text-center shadow-xl">
-            <h4 class="text-xs font-bold text-white mb-3">Histograma & Polígono de Frecuencias</h4>
+          <div class="bg-slate-800/80 border border-slate-700 p-5 rounded-2xl space-y-2">
+            <h4 class="text-xs font-bold text-white">Histograma & Polígono de Frecuencias</h4>
             ${generarHistogramaSVG(clases)}
           </div>
-
-          <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-5 text-center shadow-xl">
-            <h4 class="text-xs font-bold text-white mb-3">Diagrama de Caja y Bigotes (Boxplot)</h4>
+          <div class="bg-slate-800/80 border border-slate-700 p-5 rounded-2xl space-y-2">
+            <h4 class="text-xs font-bold text-white">Diagrama de Caja y Bigotes (Boxplot)</h4>
             ${generarBoxplotSVG(min, q1, mediana, q3, max, media)}
           </div>
         </div>
 
-        <!-- DIAGNÓSTICO AUTOMÁTICO -->
+        <!-- LECTURA AUTOMÁTICA -->
         <div class="bg-emerald-500/10 border border-emerald-500/30 p-4 rounded-xl text-xs text-emerald-300 space-y-1">
-          <p class="font-bold">📌 Lectura Automática del Proceso:</p>
+          <p class="font-bold">💡 Lectura e Interpretación Automática:</p>
           <p>
-            Con n=${n} observaciones, el promedio de permanencia es de <strong>${media.toFixed(2).replace('.',',')} min</strong> y el 50% central está por debajo de <strong>${mediana.toFixed(2).replace('.',',')} min</strong>. 
-            ${media > mediana ? 'Presenta un <strong>sesgo positivo (a la derecha)</strong> debido a usuarios con permanencia prolongada.' : media < mediana ? 'Presenta un <strong>sesgo negativo (a la izquierda)</strong>.' : 'La distribución es <strong>simétrica</strong>.'} 
-            El coeficiente de variación es del <strong>${cv.toFixed(2).replace('.',',')}%</strong> (datos 
-            ${cv < 15 ? 'altamente homogéneos' : cv <= 30 ? 'de variabilidad moderada' : 'muy dispersos / heterogéneos'}).
+            ${media > mediana ? 'La distribución presenta un <strong>sesgo positivo (a la derecha)</strong> debido a que la Media ('+media.toFixed(2).replace('.',',')+') es mayor que la Mediana ('+mediana.toFixed(2).replace('.',',')+').' : media < mediana ? 'La distribución presenta un <strong>sesgo negativo (a la izquierda)</strong> ya que la Media ('+media.toFixed(2).replace('.',',')+') es menor que la Mediana ('+mediana.toFixed(2).replace('.',',')+').' : 'La distribución es perfectamente <strong>simétrica</strong> (Media = Mediana).'}
+            Respecto a la homogeneidad del grupo, el Coeficiente de Variación es de <strong>${cv.toFixed(2).replace('.',',')}%</strong>, lo que indica que los datos son 
+            <strong>${cv < 15 ? 'altamente homogéneos (CV < 15%)' : cv <= 30 ? 'de variabilidad moderada (15% ≤ CV ≤ 30%)' : 'muy dispersos / heterogéneos (CV ≥ 30%)'}</strong>.
           </p>
         </div>
       `;
     }
 
-    function renderCualitativo(container, dataSet, varKey) {
+    function renderAnalisisCualitativo(dataset, vSelect, container) {
+      const fieldMap = {
+        'zona': 'zona',
+        'frecuencia': 'frecuencia',
+        'hidratacion': 'hidratacion',
+        'calificacion': 'calificacion',
+        'franja': 'franja'
+      };
+      const attr = fieldMap[vSelect];
       const frecs = {};
-      const n = dataSet.length;
-      dataSet.forEach(r => frecs[r[varKey]] = (frecs[r[varKey]] || 0) + 1);
+      const n = dataset.length;
+
+      dataset.forEach(r => {
+        let val = r[attr];
+        frecs[val] = (frecs[val] || 0) + 1;
+      });
 
       let tablaCat = [];
-      let acFi = 0, modaCat = '', maxFi = -1;
+      let acFi = 0;
+      let modaCat = '';
+      let maxFi = -1;
 
       for (let cat in frecs) {
         let fi = frecs[cat];
@@ -1052,20 +1178,26 @@
 
       container.innerHTML = `
         <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-3">
-          <h3 class="text-sm font-bold text-white border-b border-slate-700 pb-2">Tabla de Frecuencias Categorías</h3>
-          <div class="overflow-x-auto">
-            <table class="w-full text-xs text-left text-slate-300">
-              <thead class="bg-slate-900 text-slate-400 text-[10px] uppercase">
-                <tr><th>Categoría</th><th>fi</th><th>Fi</th><th>hi (%)</th><th>Hi (%)</th></tr>
+          <h3 class="text-sm font-bold text-white">Tabla de Frecuencias Cualitativa: ${attr.toUpperCase()}</h3>
+          <div class="overflow-x-auto rounded-xl border border-slate-700">
+            <table class="w-full text-left text-xs text-slate-300">
+              <thead class="bg-slate-900 text-slate-400 uppercase text-[10px]">
+                <tr>
+                  <th class="p-3">Categoría / Opción</th>
+                  <th class="p-3 text-right">Frecuencia Absoluta (fi)</th>
+                  <th class="p-3 text-right">Frecuencia Acumulada (Fi)</th>
+                  <th class="p-3 text-right">Frecuencia Relativa (hi %)</th>
+                  <th class="p-3 text-right">Relativa Acumulada (Hi %)</th>
+                </tr>
               </thead>
-              <tbody class="divide-y divide-slate-700/60 font-mono">
+              <tbody class="divide-y divide-slate-700/50 bg-slate-900/40">
                 ${tablaCat.map(c => `
                   <tr>
-                    <td class="p-2 font-bold text-emerald-400">${c.cat}</td>
-                    <td class="p-2 font-bold text-white">${c.fi}</td>
-                    <td class="p-2">${c.Fi}</td>
-                    <td class="p-2">${(c.hi*100).toFixed(2).replace('.',',')}%</td>
-                    <td class="p-2">${(c.Hi*100).toFixed(2).replace('.',',')}%</td>
+                    <td class="p-2.5 font-bold text-white">${c.cat}</td>
+                    <td class="p-2.5 text-right font-mono font-bold text-emerald-400">${c.fi}</td>
+                    <td class="p-2.5 text-right font-mono text-slate-400">${c.Fi}</td>
+                    <td class="p-2.5 text-right font-mono text-cyan-400">${(c.hi*100).toFixed(2).replace('.',',')}%</td>
+                    <td class="p-2.5 text-right font-mono text-slate-400">${(c.Hi*100).toFixed(2).replace('.',',')}%</td>
                   </tr>
                 `).join('')}
               </tbody>
@@ -1073,21 +1205,19 @@
           </div>
         </div>
 
-        <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-5 text-center shadow-xl">
-          <h4 class="text-xs font-bold text-white mb-3">Distribución de Frecuencias</h4>
-          ${generarBarrasHorizontalesSVG(tablaCat, n)}
+        <div class="bg-slate-800/80 border border-slate-700 p-5 rounded-2xl space-y-2">
+          <h4 class="text-xs font-bold text-white">Diagrama de Barras Horizontales</h4>
+          ${generarBarrasSVG(tablaCat, n)}
         </div>
 
-        <div class="bg-emerald-500/10 border border-emerald-500/30 p-4 rounded-xl text-xs text-emerald-300">
-          <p class="font-bold">📌 Lectura Automática:</p>
-          <p>La categoría predominante (Moda) es <strong>"${modaCat}"</strong> con ${maxFi} menciones, representando el <strong>${((maxFi/n)*100).toFixed(2).replace('.',',')}%</strong> de la muestra.</p>
+        <div class="bg-cyan-500/10 border border-cyan-500/30 p-4 rounded-xl text-xs text-cyan-300">
+          <strong>💡 Lectura Cualitativa:</strong> La categoría predominante (Moda) es <strong>"${modaCat}"</strong> con un total de <strong>${maxFi}</strong> respuestas de un total de $n=${n}$, equivalente al <strong>${((maxFi/n)*100).toFixed(2).replace('.',',')}%</strong>.
         </div>
       `;
     }
 
-    // GENERADORES DE SVG
     function generarHistogramaSVG(clases) {
-      const width = 500, height = 230, padding = 35;
+      const width = 600, height = 260, padding = 40;
       const maxFi = Math.max(...clases.map(c => c.fi), 1);
       const bw = (width - 2 * padding) / clases.length;
 
@@ -1099,173 +1229,168 @@
         const cx = x + bw / 2;
         points += `${cx},${y} `;
 
-        rects += `<rect x="${x}" y="${y}" width="${bw - 3}" height="${bh}" fill="#10B981" opacity="0.8" rx="3"/>`;
-        rects += `<text x="${cx}" y="${y - 4}" font-size="10" font-weight="bold" text-anchor="middle" fill="#10B981">${c.fi}</text>`;
-        rects += `<text x="${cx}" y="${height - padding + 12}" font-size="8" text-anchor="middle" fill="#94A3B8">${c.Li.toFixed(1)}</text>`;
+        rects += `<rect x="${x}" y="${y}" width="${bw - 3}" height="${bh}" fill="#10B981" opacity="0.8" rx="2"/>`;
+        rects += `<text x="${cx}" y="${y - 6}" font-size="10" font-weight="bold" text-anchor="middle" fill="#10B981">${c.fi}</text>`;
+        rects += `<text x="${cx}" y="${height - padding + 16}" font-size="9" text-anchor="middle" fill="#94A3B8">${c.Li.toFixed(1)}</text>`;
       });
 
       return `
-        <svg viewBox="0 0 ${width} ${height}" class="w-full h-auto max-h-56 mx-auto">
-          <line x1="${padding}" y1="${height - padding}" x2="${width - padding}" y2="${height - padding}" stroke="#334155" stroke-width="2"/>
-          <line x1="${padding}" y1="${padding}" x2="${padding}" y2="${height - padding}" stroke="#334155" stroke-width="2"/>
+        <svg viewBox="0 0 ${width} ${height}" class="w-full h-auto bg-slate-900 rounded-xl border border-slate-700/80 p-2">
+          <line x1="${padding}" y1="${height-padding}" x2="${width-padding}" y2="${height-padding}" stroke="#475569" stroke-width="1.5"/>
+          <line x1="${padding}" y1="${padding}" x2="${padding}" y2="${height-padding}" stroke="#475569" stroke-width="1.5"/>
           ${rects}
-          <polyline points="${points.trim()}" fill="none" stroke="#F59E0B" stroke-width="3" stroke-linecap="round"/>
+          <polyline points="${points.trim()}" fill="none" stroke="#F59E0B" stroke-width="2.5" stroke-dasharray="4 2"/>
         </svg>
       `;
     }
 
     function generarBoxplotSVG(min, q1, med, q3, max, media) {
-      const width = 500, height = 140, padding = 45;
+      const width = 600, height = 140, padding = 50;
       const wEff = width - 2 * padding;
       const r = (max - min) || 1;
+
       const getX = val => padding + ((val - min) / r) * wEff;
 
       const xMin = getX(min), xQ1 = getX(q1), xMed = getX(med), xQ3 = getX(q3), xMax = getX(max), xMedia = getX(media);
 
       return `
-        <svg viewBox="0 0 ${width} ${height}" class="w-full h-auto max-h-36 mx-auto">
-          <line x1="${xMin}" y1="60" x2="${xQ1}" y2="60" stroke="#94A3B8" stroke-width="2"/>
-          <line x1="${xQ3}" y1="60" x2="${xMax}" y2="60" stroke="#94A3B8" stroke-width="2"/>
-          <line x1="${xMin}" y1="45" x2="${xMin}" y2="75" stroke="#94A3B8" stroke-width="2"/>
-          <line x1="${xMax}" y1="45" x2="${xMax}" y2="75" stroke="#94A3B8" stroke-width="2"/>
+        <svg viewBox="0 0 ${width} ${height}" class="w-full h-auto bg-slate-900 rounded-xl border border-slate-700/80 p-2">
+          <line x1="${xMin}" y1="70" x2="${xQ1}" y2="70" stroke="#94A3B8" stroke-width="2"/>
+          <line x1="${xQ3}" y1="70" x2="${xMax}" y2="70" stroke="#94A3B8" stroke-width="2"/>
+          <line x1="${xMin}" y1="50" x2="${xMin}" y2="90" stroke="#94A3B8" stroke-width="2"/>
+          <line x1="${xMax}" y1="50" x2="${xMax}" y2="90" stroke="#94A3B8" stroke-width="2"/>
 
-          <rect x="${xQ1}" y="35" width="${xQ3 - xQ1}" height="50" fill="#10B981" opacity="0.3" stroke="#10B981" stroke-width="2" rx="4"/>
-          <line x1="${xMed}" y1="35" x2="${xMed}" y2="85" stroke="#F59E0B" stroke-width="3"/>
+          <rect x="${xQ1}" y="40" width="${xQ3 - xQ1}" height="60" fill="#06B6D4" opacity="0.25" stroke="#06B6D4" stroke-width="2" rx="4"/>
+          <line x1="${xMed}" y1="40" x2="${xMed}" y2="100" stroke="#F59E0B" stroke-width="3"/>
 
-          <circle cx="${xMedia}" cy="60" r="5" fill="#EF4444"/>
+          <circle cx="${xMedia}" cy="70" r="5" fill="#EF4444"/>
 
-          <text x="${xMin}" y="105" font-size="9" text-anchor="middle" fill="#94A3B8">Mín: ${min}</text>
-          <text x="${xQ1}" y="105" font-size="9" text-anchor="middle" fill="#94A3B8">Q1: ${q1.toFixed(1)}</text>
-          <text x="${xMed}" y="25" font-size="9" font-weight="bold" text-anchor="middle" fill="#F59E0B">Me: ${med.toFixed(1)}</text>
-          <text x="${xQ3}" y="105" font-size="9" text-anchor="middle" fill="#94A3B8">Q3: ${q3.toFixed(1)}</text>
-          <text x="${xMax}" y="105" font-size="9" text-anchor="middle" fill="#94A3B8">Máx: ${max}</text>
-          <text x="${xMedia}" y="25" font-size="9" font-weight="bold" text-anchor="middle" fill="#EF4444">X̄: ${media.toFixed(1)}</text>
+          <text x="${xMin}" y="115" font-size="9" text-anchor="middle" fill="#94A3B8">Mín: ${min}</text>
+          <text x="${xQ1}" y="115" font-size="9" text-anchor="middle" fill="#94A3B8">Q1: ${q1.toFixed(1)}</text>
+          <text x="${xMed}" y="30" font-size="10" font-weight="bold" text-anchor="middle" fill="#F59E0B">Me: ${med.toFixed(1)}</text>
+          <text x="${xQ3}" y="115" font-size="9" text-anchor="middle" fill="#94A3B8">Q3: ${q3.toFixed(1)}</text>
+          <text x="${xMax}" y="115" font-size="9" text-anchor="middle" fill="#94A3B8">Máx: ${max}</text>
+          <text x="${xMedia}" y="30" font-size="10" font-weight="bold" text-anchor="middle" fill="#EF4444">X̄: ${media.toFixed(1)}</text>
         </svg>
       `;
     }
 
-    function generarBarrasHorizontalesSVG(tablaCat, n) {
-      const width = 500, bh = 24, padding = 20;
-      const height = tablaCat.length * (bh + 10) + 2 * padding;
+    function generarBarrasSVG(tablaCat, n) {
+      const width = 600, bh = 24, padding = 40;
+      const height = tablaCat.length * (bh + 12) + 2 * padding;
       const maxFi = Math.max(...tablaCat.map(c => c.fi), 1);
 
       let bars = '';
       tablaCat.forEach((c, i) => {
-        const y = padding + i * (bh + 10);
-        const bw = (c.fi / maxFi) * (width - 180);
+        const y = padding + i * (bh + 12);
+        const bw = (c.fi / maxFi) * (width - 240);
         bars += `
-          <text x="140" y="${y + 16}" font-size="10" font-weight="bold" text-anchor="end" fill="#94A3B8">${c.cat}</text>
-          <rect x="150" y="${y}" width="${bw}" height="${bh}" fill="#10B981" rx="4"/>
-          <text x="${160 + bw}" y="${y + 16}" font-size="10" font-weight="bold" fill="#F8FAFC">${c.fi} (${((c.fi/n)*100).toFixed(1)}%)</text>
+          <text x="180" y="${y + 16}" font-size="10" font-weight="bold" text-anchor="end" fill="#E2E8F0">${c.cat}</text>
+          <rect x="190" y="${y}" width="${bw}" height="${bh}" fill="#3B82F6" opacity="0.85" rx="4"/>
+          <text x="${200 + bw}" y="${y + 16}" font-size="10" font-weight="bold" fill="#60A5FA">${c.fi} (${((c.fi/n)*100).toFixed(1)}%)</text>
         `;
       });
 
-      return `<svg viewBox="0 0 ${width} ${height}" class="w-full h-auto mx-auto">${bars}</svg>`;
+      return `<svg viewBox="0 0 ${width} ${height}" class="w-full h-auto bg-slate-900 rounded-xl border border-slate-700/80 p-2">${bars}</svg>`;
     }
 
-    // ==================== PROBABILIDADES ====================
-    function getCategoriasVar(v) {
-      if (v === 'zona') return ['Pesas libres', 'Máquinas cardiovasculares', 'Zona funcional'];
-      if (v === 'frecuencia') return ['Primera vez en la semana', '2 a 3 veces', '4 o más veces'];
-      if (v === 'hidratacion') return ['Sí', 'No'];
-      if (v === 'calificacion') return ['1', '2', '3', '4', '5'];
-      return [];
-    }
+    // ==================== TAB 3: PROBABILIDAD (UF3) ====================
 
     function updateProbOptions(tipo) {
-      const varVal = document.getElementById(`prob-var-${tipo}`).value;
-      const condGroup = document.getElementById(`group-cond-${tipo}`);
-      const catGroup = document.getElementById(`group-cat-${tipo}`);
-      const selCat = document.getElementById(`prob-cat-${tipo}`);
+      const v = document.getElementById(`prob-var-${tipo}`).value;
+      const groupCond = document.getElementById(`group-cond-${tipo}`);
+      const groupCat = document.getElementById(`group-cat-${tipo}`);
 
-      if (varVal === 'tiempo') {
-        if (condGroup) condGroup.classList.remove('hidden');
-        if (catGroup) catGroup.classList.add('hidden');
-      } else if (varVal === 'ninguna') {
-        if (condGroup) condGroup.classList.add('hidden');
-        if (catGroup) catGroup.classList.add('hidden');
+      if (v === 'tiempo') {
+        if(groupCond) groupCond.classList.remove('hidden');
+        if(groupCat) groupCat.classList.add('hidden');
+      } else if (v === 'ninguna') {
+        if(groupCond) groupCond.classList.add('hidden');
+        if(groupCat) groupCat.classList.add('hidden');
       } else {
-        if (condGroup) condGroup.classList.add('hidden');
-        if (catGroup) catGroup.classList.remove('hidden');
-        const cats = getCategoriasVar(varVal);
-        selCat.innerHTML = cats.map(c => `<option value="${c}">${c}</option>`).join('');
+        if(groupCond) groupCond.classList.add('hidden');
+        if(groupCat) groupCat.classList.remove('hidden');
+
+        const catSelect = document.getElementById(`prob-cat-${tipo}`);
+        let opts = getCategoriasVar(v);
+        catSelect.innerHTML = opts.map(o => `<option value="${o}">${o}</option>`).join('');
       }
+    }
+
+    function getCategoriasVar(varKey) {
+      if (varKey === 'zona') return ["Pesas libres", "Máquinas cardiovasculares", "Zona funcional"];
+      if (varKey === 'frecuencia') return ["Primera vez en la semana", "2 a 3 veces", "4 o más veces"];
+      if (varKey === 'hidratacion') return ["Sí", "No"];
+      if (varKey === 'calificacion') return ["1", "2", "3", "4", "5"];
+      return [];
     }
 
     function calcularProbabilidades() {
       const container = document.getElementById('contenedor-resultado-probabilidad');
       const n = registros.length;
-
-      if (n === 0) {
-        container.innerHTML = `<div class="bg-amber-500/10 border border-amber-500/30 text-amber-400 p-4 rounded-xl text-xs">Cargue datos para calcular probabilidades.</div>`;
-        return;
-      }
+      if (n === 0) return container.innerHTML = '<div class="text-center text-slate-400 text-xs">No hay datos para calcular probabilidades.</div>';
 
       const varA = document.getElementById('prob-var-a').value;
       const varB = document.getElementById('prob-var-b').value;
 
-      let evalA = r => {
+      let cumpleA = r => {
         if (varA === 'tiempo') {
           const op = document.getElementById('prob-op-a').value;
-          const val = parseFloat(document.getElementById('prob-val-num-a').value) || 0;
+          const val = parseFloat(document.getElementById('prob-val-num-a').value);
           return op === 'gt' ? r.tiempo > val : r.tiempo <= val;
         }
-        return r[varA] === document.getElementById('prob-cat-a').value;
+        const cat = document.getElementById('prob-cat-a').value;
+        return r[varA] === cat;
       };
 
-      const nA = registros.filter(evalA).length;
+      const nA = registros.filter(cumpleA).length;
       const pA = nA / n;
 
       let html = `
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          <div class="bg-slate-800/90 border border-slate-700 p-4 rounded-xl text-center">
-            <span class="text-[10px] text-slate-400 font-bold uppercase block">Casos A / Total</span>
-            <span class="text-xl font-bold text-white">${nA} / ${n}</span>
-            <p class="text-xs font-bold text-emerald-400 mt-1">P(A) = ${(pA * 100).toFixed(2).replace('.',',')}%</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+          <div class="bg-slate-900 border border-emerald-500/30 p-4 rounded-xl text-center">
+            <span class="text-[10px] text-emerald-400 uppercase font-bold block">P(A) Simple</span>
+            <span class="text-2xl font-black text-white">${(pA*100).toFixed(2).replace('.',',')}%</span>
+            <span class="text-[10px] text-slate-500 block mt-1">${nA} de ${n} casos</span>
           </div>
       `;
 
       if (varB !== 'ninguna') {
-        const valB = document.getElementById('prob-cat-b').value;
-        let evalB = r => r[varB] === valB;
-        let evalInter = r => evalA(r) && evalB(r);
+        const catB = document.getElementById('prob-cat-b').value;
+        let cumpleB = r => r[varB] === catB;
+        let cumpleInter = r => cumpleA(r) && cumpleB(r);
 
-        const nB = registros.filter(evalB).length;
-        const nInter = registros.filter(evalInter).length;
+        const nB = registros.filter(cumpleB).length;
+        const nInter = registros.filter(cumpleInter).length;
 
         const pB = nB / n;
         const pInter = nInter / n;
         const pCond = nB > 0 ? nInter / nB : 0;
 
-        const diff = pCond - pA;
-        const efecto = diff > 0.02 ? 'INCREMENTA' : diff < -0.02 ? 'DISMINUYE' : 'NO ALTERA SIGNIFICATIVAMENTE';
+        const dif = pCond - pA;
+        const efecto = dif > 0.02 ? 'INCREMENTA' : dif < -0.02 ? 'REDUCE' : 'NO ALTERA SUSTANCIALMENTE';
 
         html += `
-            <div class="bg-slate-800/90 border border-slate-700 p-4 rounded-xl text-center">
-              <span class="text-[10px] text-slate-400 font-bold uppercase block">Casos B / Total</span>
-              <span class="text-xl font-bold text-white">${nB} / ${n}</span>
-              <p class="text-xs font-bold text-cyan-400 mt-1">P(B) = ${(pB * 100).toFixed(2).replace('.',',')}%</p>
-            </div>
-            <div class="bg-slate-800/90 border border-slate-700 p-4 rounded-xl text-center">
-              <span class="text-[10px] text-slate-400 font-bold uppercase block">Intersección A ∩ B</span>
-              <span class="text-xl font-bold text-white">${nInter} / ${n}</span>
-              <p class="text-xs font-bold text-purple-400 mt-1">P(A ∩ B) = ${(pInter * 100).toFixed(2).replace('.',',')}%</p>
-            </div>
-            <div class="bg-slate-800/90 border border-amber-500/40 p-4 rounded-xl text-center bg-amber-500/5">
-              <span class="text-[10px] text-amber-400 font-bold uppercase block">Probabilidad Condicional</span>
-              <span class="text-xl font-bold text-white">${nInter} / ${nB}</span>
-              <p class="text-xs font-bold text-amber-400 mt-1">P(A|B) = ${(pCond * 100).toFixed(2).replace('.',',')}%</p>
-            </div>
+          <div class="bg-slate-900 border border-slate-700 p-4 rounded-xl text-center">
+            <span class="text-[10px] text-slate-400 uppercase font-bold block">P(B) Condición</span>
+            <span class="text-2xl font-black text-white">${(pB*100).toFixed(2).replace('.',',')}%</span>
+            <span class="text-[10px] text-slate-500 block mt-1">${nB} de ${n} casos</span>
           </div>
+          <div class="bg-slate-900 border border-slate-700 p-4 rounded-xl text-center">
+            <span class="text-[10px] text-slate-400 uppercase font-bold block">P(A ∩ B) Intersección</span>
+            <span class="text-2xl font-black text-amber-400">${(pInter*100).toFixed(2).replace('.',',')}%</span>
+            <span class="text-[10px] text-slate-500 block mt-1">${nInter} casos simultáneos</span>
+          </div>
+          <div class="bg-slate-900 border border-emerald-400 p-4 rounded-xl text-center shadow-lg shadow-emerald-500/10">
+            <span class="text-[10px] text-emerald-400 uppercase font-bold block">P(A | B) Condicional</span>
+            <span class="text-2xl font-black text-emerald-400">${(pCond*100).toFixed(2).replace('.',',')}%</span>
+            <span class="text-[10px] text-slate-500 block mt-1">P(A∩B) ÷ P(B)</span>
+          </div>
+        </div>
 
-          <div class="bg-amber-500/10 border border-amber-500/30 p-4 rounded-xl text-xs text-amber-300 mt-3">
-            <p class="font-bold">📌 Análisis Probabilístico:</p>
-            <p>
-              La probabilidad base $P(A)$ es de <strong>${(pA * 100).toFixed(2).replace('.',',')}%</strong>. 
-              Al condicionar por el evento B (<strong>"${valB}"</strong>), la probabilidad resulta en <strong>${(pCond * 100).toFixed(2).replace('.',',')}%</strong>. 
-              Por ende, saber que ocurrió B <strong>${efecto}</strong> la probabilidad del evento A.
-            </p>
-          </div>
+        <div class="bg-slate-900 border border-slate-700 p-4 rounded-xl text-xs text-slate-300">
+          <strong>💡 Interpretación Condicional:</strong> La probabilidad general de ocurrencia del evento A es del <strong>${(pA*100).toFixed(2)}%</strong>. Sin embargo, si se sabe con certeza que ocurrió la condición B (<em>"${catB}"</em>), la probabilidad de que ocurra A cambia a <strong>${(pCond*100).toFixed(2)}%</strong>. Por lo tanto, la presencia del evento B <strong>${efecto}</strong> la probabilidad de A.
+        </div>
         `;
       } else {
         html += `</div>`;
@@ -1279,86 +1404,104 @@
       const cKey = document.getElementById('cont-cols').value;
       const container = document.getElementById('contenedor-tabla-contingencia');
 
-      const catsF = getCategoriasVar(fKey);
-      const catsC = getCategoriasVar(cKey);
+      const catFilas = getCategoriasVar(fKey);
+      const catCols = getCategoriasVar(cKey);
 
-      let grid = {}, totF = {}, totC = {}, totalG = 0;
-      catsF.forEach(f => {
+      let grid = {}, totFilas = {}, totCols = {}, totalG = 0;
+
+      catFilas.forEach(f => {
         grid[f] = {};
-        totF[f] = 0;
-        catsC.forEach(c => grid[f][c] = 0);
+        totFilas[f] = 0;
+        catCols.forEach(c => grid[f][c] = 0);
       });
-      catsC.forEach(c => totC[c] = 0);
+      catCols.forEach(c => totCols[c] = 0);
 
       registros.forEach(r => {
-        const vf = r[fKey], vc = r[cKey];
+        let vf = r[fKey], vc = r[cKey];
         if (grid[vf] && grid[vf][vc] !== undefined) {
           grid[vf][vc]++;
-          totF[vf]++;
-          totC[vc]++;
+          totFilas[vf]++;
+          totCols[vc]++;
           totalG++;
         }
       });
 
       container.innerHTML = `
-        <table class="w-full text-xs text-left text-slate-300">
+        <table class="w-full text-left text-xs text-slate-300">
           <thead class="bg-slate-900 text-slate-400 uppercase text-[10px]">
             <tr>
               <th class="p-3">${fKey.toUpperCase()} \\ ${cKey.toUpperCase()}</th>
-              ${catsC.map(c => `<th class="p-3 text-center">${c}</th>`).join('')}
-              <th class="p-3 text-center bg-slate-800 text-white font-bold">Total Fila</th>
+              ${catCols.map(c => `<th class="p-3 text-center">${c}</th>`).join('')}
+              <th class="p-3 text-right">Total Fila</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-slate-700/60 font-mono">
-            ${catsF.map(f => `
+          <tbody class="divide-y divide-slate-700/50 bg-slate-900/40">
+            ${catFilas.map(f => `
               <tr>
-                <td class="p-3 font-bold text-emerald-400 font-sans">${f}</td>
-                ${catsC.map(c => `<td class="p-3 text-center">${grid[f][c]}</td>`).join('')}
-                <td class="p-3 text-center font-bold text-white bg-slate-800/40">${totF[f]}</td>
+                <td class="p-2.5 font-bold text-white">${f}</td>
+                ${catCols.map(c => `<td class="p-2.5 text-center font-mono">${grid[f][c]}</td>`).join('')}
+                <td class="p-2.5 text-right font-bold text-emerald-400 font-mono">${totFilas[f]}</td>
               </tr>
             `).join('')}
-            <tr class="bg-slate-900 font-bold border-t border-slate-700 text-white font-sans">
-              <td class="p-3">Total Columna</td>
-              ${catsC.map(c => `<td class="p-3 text-center font-mono">${totC[c]}</td>`).join('')}
-              <td class="p-3 text-center text-emerald-400 font-mono">${totalG}</td>
+            <tr class="bg-slate-900 font-bold">
+              <td class="p-2.5 text-emerald-400">Total Columna</td>
+              ${catCols.map(c => `<td class="p-2.5 text-center font-mono text-emerald-400">${totCols[c]}</td>`).join('')}
+              <td class="p-2.5 text-right font-mono text-amber-400">${totalG}</td>
             </tr>
           </tbody>
         </table>
       `;
     }
 
-    // ==================== INFORME PDF ====================
+    // ==================== TAB 4: INFORME EJECUTIVO ====================
+
     function renderInforme() {
       document.getElementById('inf-fecha-emision').innerText = new Date().toLocaleDateString('es-CO');
       document.getElementById('inf-muestra-n').innerText = registros.length;
 
       if (registros.length > 0) {
-        const fechas = registros.map(r => r.fecha).sort();
-        document.getElementById('inf-periodo-rango').innerText = `${fechas[0]} al ${fechas[fechas.length - 1]}`;
+        let fechas = registros.map(r => r.fecha).sort();
+        document.getElementById('inf-periodo-rango').innerText = `${fechas[0]} al ${fechas[fechas.length-1]}`;
       }
 
-      const tableContainer = document.getElementById('inf-resumen-medidas-tabla');
+      const container = document.getElementById('inf-resumen-medidas-tabla');
       if (registros.length === 0) {
-        tableContainer.innerHTML = `<p class="text-slate-400 text-xs">Sin registros cargados.</p>`;
+        container.innerHTML = '<p class="text-xs text-slate-500">Sin datos cargados.</p>';
         return;
       }
 
       const tiempos = registros.map(r => r.tiempo).sort((a,b)=>a-b);
       const media = tiempos.reduce((a,b)=>a+b,0) / tiempos.length;
-      const s2 = tiempos.length > 1 ? tiempos.reduce((a,b)=>a+Math.pow(b-media,2),0)/(tiempos.length-1) : 0;
-      const s = Math.sqrt(s2);
+      const s = Math.sqrt(tiempos.reduce((a,b)=>a+Math.pow(b-media,2),0)/(tiempos.length-1 || 1));
 
-      tableContainer.innerHTML = `
-        <table class="w-full text-xs text-left text-slate-800 border border-slate-300">
-          <thead class="bg-slate-100 uppercase text-[10px] font-bold">
-            <tr><th class="p-2 border">Total Registros (n)</th><th class="p-2 border">Media Permanencia</th><th class="p-2 border">Desviación Estándar</th><th class="p-2 border">Zona Predominante</th></tr>
-          </thead>
-          <tbody class="font-mono">
+      container.innerHTML = `
+        <table class="w-full text-left border border-slate-300">
+          <thead class="bg-slate-100 text-slate-900 font-bold border-b border-slate-300">
             <tr>
-              <td class="p-2 border">${registros.length}</td>
-              <td class="p-2 border">${media.toFixed(2).replace('.',',')} min</td>
-              <td class="p-2 border">${s.toFixed(2).replace('.',',')} min</td>
-              <td class="p-2 border font-sans font-bold">Pesas libres / Cardio</td>
+              <th class="p-2 border-r">Variable</th>
+              <th class="p-2 border-r">Tipo</th>
+              <th class="p-2 border-r">Medida Principal (Promedio/Moda)</th>
+              <th class="p-2">Dispersión / Detalle</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="border-b border-slate-200">
+              <td class="p-2 font-bold border-r">Tiempo de Permanencia</td>
+              <td class="p-2 border-r">Cuantitativa Continua</td>
+              <td class="p-2 border-r font-mono">X̄ = ${media.toFixed(2).replace('.',',')} min</td>
+              <td class="p-2 font-mono">s = ±${s.toFixed(2).replace('.',',')} min</td>
+            </tr>
+            <tr class="border-b border-slate-200">
+              <td class="p-2 font-bold border-r">Zona Predominante</td>
+              <td class="p-2 border-r">Cualitativa Nominal</td>
+              <td class="p-2 border-r">${document.getElementById('kpi-zona').innerText}</td>
+              <td class="p-2 text-slate-600">Moda de uso en gimnasio</td>
+            </tr>
+            <tr>
+              <td class="p-2 font-bold border-r">Franja Horaria Pico</td>
+              <td class="p-2 border-r">Cualitativa Calculada</td>
+              <td class="p-2 border-r font-mono">${document.getElementById('kpi-franja').innerText}</td>
+              <td class="p-2 text-slate-600">Máxima concentración</td>
             </tr>
           </tbody>
         </table>
@@ -1366,23 +1509,23 @@
     }
 
     function guardarTextosInforme() {
-      const data = {
+      const infoTextos = {
         interp: document.getElementById('inf-txt-interp').value,
         concl: document.getElementById('inf-txt-concl').value,
         recom: document.getElementById('inf-txt-recom').value
       };
-      localStorage.setItem('estadidiapp_unipaz_textos_informe_v2', JSON.stringify(data));
+      localStorage.setItem('estadidiapp_gym_informe_textos_v2', JSON.stringify(infoTextos));
     }
 
     function cargarTextosInforme() {
-      const stored = localStorage.getItem('estadidiapp_unipaz_textos_informe_v2');
-      if (stored) {
+      const saved = localStorage.getItem('estadidiapp_gym_informe_textos_v2');
+      if (saved) {
         try {
-          const parsed = JSON.parse(stored);
+          const parsed = JSON.parse(saved);
           document.getElementById('inf-txt-interp').value = parsed.interp || '';
           document.getElementById('inf-txt-concl').value = parsed.concl || '';
           document.getElementById('inf-txt-recom').value = parsed.recom || '';
-        } catch(e) {}
+        } catch(e){}
       }
     }
   </script>
