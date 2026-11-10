@@ -1025,7 +1025,6 @@
       // Tabla de frecuencias para datos agrupados (Sturges)
       const kClasses = Math.max(1, Math.round(1 + 3.322 * Math.log10(n)));
       const ampRaw = rango / kClasses;
-      // Redondeo HACIA ARRIBA con 1 decimal de precisión por defecto en datos
       const amp = Math.ceil(ampRaw * 10) / 10 || 1;
 
       let clases = [];
@@ -1033,7 +1032,7 @@
       let acFi = 0;
       for (let i = 0; i < kClasses; i++) {
         let curLs = i === kClasses - 1 ? max : Number((curLi + amp).toFixed(1));
-        if (i === kClasses - 1) curLs = max; // Garantizar cobertura hasta el máximo
+        if (i === kClasses - 1) curLs = max;
 
         let fi = datos.filter(x => i === kClasses - 1 ? (x >= curLi && x <= curLs) : (x >= curLi && x < curLs)).length;
         acFi += fi;
@@ -1045,7 +1044,6 @@
       }
 
       container.innerHTML = `
-        <!-- TABLA COMPLETA CON FÓRMULAS Y VALORES (Formato Colombia) -->
         <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-3">
           <h3 class="text-sm font-bold text-white">Consolidado Estadístico Cuantitativo (Tiempo de Permanencia)</h3>
           <div class="overflow-x-auto rounded-xl border border-slate-700">
@@ -1075,7 +1073,6 @@
           </div>
         </div>
 
-        <!-- TABLA DE FRECUENCIAS PARA DATOS AGRUPADOS (STURGES) -->
         <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-3">
           <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
             <h3 class="text-sm font-bold text-white">Tabla de Frecuencias para Datos Agrupados (Regla de Sturges)</h3>
@@ -1111,7 +1108,6 @@
           </div>
         </div>
 
-        <!-- GRÁFICOS SVG -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div class="bg-slate-800/80 border border-slate-700 p-5 rounded-2xl space-y-2">
             <h4 class="text-xs font-bold text-white">Histograma & Polígono de Frecuencias</h4>
@@ -1281,10 +1277,10 @@
       const groupCond = document.getElementById(`group-cond-${tipo}`);
       const groupCat = document.getElementById(`group-cat-${tipo}`);
 
-      if (v === 'tiempo') {
+      if (tipo === 'a' && v === 'tiempo') {
         if(groupCond) groupCond.classList.remove('hidden');
         if(groupCat) groupCat.classList.add('hidden');
-      } else if (v === 'ninguna') {
+      } else if (tipo === 'b' && v === 'ninguna') {
         if(groupCond) groupCond.classList.add('hidden');
         if(groupCat) groupCat.classList.add('hidden');
       } else {
@@ -1330,9 +1326,9 @@
       let html = `
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
           <div class="bg-slate-900 border border-emerald-500/30 p-4 rounded-xl text-center">
-            <span class="text-[10px] text-emerald-400 uppercase font-bold block">P(A) Simple</span>
+            <span class="text-[10px] text-emerald-400 uppercase font-bold block">P(A) = n(A) ÷ n</span>
             <span class="text-2xl font-black text-white">${(pA*100).toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2})}%</span>
-            <span class="text-[10px] text-slate-500 block mt-1">${nA.toLocaleString('es-CO')} de ${n.toLocaleString('es-CO')} casos</span>
+            <span class="text-[10px] text-slate-500 block mt-1">${nA.toLocaleString('es-CO')} ÷ ${n.toLocaleString('es-CO')}</span>
           </div>
       `;
 
@@ -1349,28 +1345,30 @@
         const pCond = nB > 0 ? nInter / nB : 0;
 
         const dif = pCond - pA;
-        const efecto = dif > 0.02 ? 'INCREMENTA' : dif < -0.02 ? 'REDUCE' : 'NO ALTERA SUSTANCIALMENTE';
+        let efectoTexto = "casi no cambia";
+        if (dif > 0.03) efectoTexto = "aumenta";
+        else if (dif < -0.03) efectoTexto = "disminuye";
 
         html += `
           <div class="bg-slate-900 border border-slate-700 p-4 rounded-xl text-center">
-            <span class="text-[10px] text-slate-400 uppercase font-bold block">P(B) Condición</span>
+            <span class="text-[10px] text-slate-400 uppercase font-bold block">P(B) = n(B) ÷ n</span>
             <span class="text-2xl font-black text-white">${(pB*100).toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2})}%</span>
-            <span class="text-[10px] text-slate-500 block mt-1">${nB.toLocaleString('es-CO')} de ${n.toLocaleString('es-CO')} casos</span>
+            <span class="text-[10px] text-slate-500 block mt-1">${nB.toLocaleString('es-CO')} ÷ ${n.toLocaleString('es-CO')}</span>
           </div>
           <div class="bg-slate-900 border border-slate-700 p-4 rounded-xl text-center">
-            <span class="text-[10px] text-slate-400 uppercase font-bold block">P(A ∩ B) Intersección</span>
+            <span class="text-[10px] text-slate-400 uppercase font-bold block">P(A ∩ B) = n(A∩B) ÷ n</span>
             <span class="text-2xl font-black text-amber-400">${(pInter*100).toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2})}%</span>
-            <span class="text-[10px] text-slate-500 block mt-1">${nInter.toLocaleString('es-CO')} casos simultáneos</span>
+            <span class="text-[10px] text-slate-500 block mt-1">${nInter.toLocaleString('es-CO')} ÷ ${n.toLocaleString('es-CO')}</span>
           </div>
           <div class="bg-slate-900 border border-emerald-400 p-4 rounded-xl text-center shadow-lg shadow-emerald-500/10">
-            <span class="text-[10px] text-emerald-400 uppercase font-bold block">P(A | B) Condicional</span>
+            <span class="text-[10px] text-emerald-400 uppercase font-bold block">P(A | B) = P(A∩B) ÷ P(B)</span>
             <span class="text-2xl font-black text-emerald-400">${(pCond*100).toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2})}%</span>
-            <span class="text-[10px] text-slate-500 block mt-1">P(A∩B) ÷ P(B)</span>
+            <span class="text-[10px] text-slate-500 block mt-1">${nInter.toLocaleString('es-CO')} ÷ ${nB.toLocaleString('es-CO')}</span>
           </div>
         </div>
 
         <div class="bg-slate-900 border border-slate-700 p-4 rounded-xl text-xs text-slate-300">
-          <strong>💡 Interpretación Condicional:</strong> La probabilidad general de ocurrencia del evento A es del <strong>${(pA*100).toLocaleString('es-CO', {minimumFractionDigits: 2})}%</strong>. Sin embargo, si se sabe con certeza que ocurrió la condición B (<em>"${catB}"</em>), la probabilidad de que ocurra A cambia a <strong>${(pCond*100).toLocaleString('es-CO', {minimumFractionDigits: 2})}%</strong>. Por lo tanto, la presencia del evento B <strong>${efecto}</strong> la probabilidad de A.
+          <strong>💡 Interpretación analítica:</strong> Dado que ocurre el evento B (<em>"${catB}"</em>), la probabilidad de A ${efectoTexto} (pasa de ${(pA*100).toLocaleString('es-CO', {minimumFractionDigits: 1})}% a ${(pCond*100).toLocaleString('es-CO', {minimumFractionDigits: 1})}%).
         </div>
         `;
       } else {
@@ -1454,7 +1452,7 @@
 
       const tiempos = registros.map(r => r.tiempo).sort((a,b)=>a-b);
       const media = tiempos.reduce((a,b)=>a+b,0) / tiempos.length;
-      const s = Math.sqrt(tiempos.reduce((a,b)=>a+Math.pow(b-media,2),0)/(tiempos.length-1 || 1));
+      const s = Math.sqrt(tiempos.reduce((a,b)=>a+Math.pow(b-media,2),0)/(registros.length-1 || 1));
 
       container.innerHTML = `
         <table class="w-full text-left border border-slate-300">
