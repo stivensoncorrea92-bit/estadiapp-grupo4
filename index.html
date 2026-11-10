@@ -1,0 +1,1390 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EstadíApp UNIPAZ - Gimnasio Pro</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brandDark: '#0F172A',
+            brandCard: '#1E293B',
+            brandBorder: '#334155',
+            brandNeon: '#10B981',
+            brandAmber: '#F59E0B',
+            brandPurple: '#8B5CF6',
+            brandCyan: '#06B6D4'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #0F172A;
+      color: #E2E8F0;
+    }
+    
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0F172A;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+
+    /* Print styling */
+    @media print {
+      header, nav, .no-print {
+        display: none !important;
+      }
+      body {
+        background: white !important;
+        color: black !important;
+      }
+      .card-print {
+        background: white !important;
+        border: none !important;
+        box-shadow: none !important;
+        color: black !important;
+      }
+      .print-text-dark {
+        color: #0F172A !important;
+      }
+      .tab-content {
+        display: block !important;
+      }
+      #tab-registrar, #tab-analisis, #tab-probabilidad {
+        display: none !important;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-brandNeon selection:text-brandDark">
+
+  <!-- TOP HEADER -->
+  <header class="bg-slate-900/80 backdrop-blur-md border-b border-slate-800 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-col md:flex-row justify-between items-center gap-3">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-cyan-500 flex items-center justify-center font-extrabold text-slate-950 text-xl shadow-lg shadow-emerald-500/20">
+          Σ
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-lg font-bold tracking-tight text-white">EstadíApp <span class="text-emerald-400">UNIPAZ</span></h1>
+            <span class="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-semibold">Gimnasio v2.5</span>
+          </div>
+          <p class="text-xs text-slate-400">Proyecto de Aula · Estadística (840601) · Ing. de Producción</p>
+        </div>
+      </div>
+
+      <!-- Quick Actions & Stats Header -->
+      <div class="flex items-center gap-3">
+        <div class="bg-slate-800/80 border border-slate-700/60 px-3 py-1.5 rounded-lg text-right">
+          <span class="text-[10px] text-slate-400 block uppercase tracking-wider font-semibold">Total Muestra</span>
+          <span id="header-total-badge" class="text-base font-extrabold text-emerald-400">0</span>
+          <span class="text-xs text-slate-400">/ 40 reg. min</span>
+        </div>
+
+        <button onclick="generarDatosDemo(50)" class="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-950 font-bold text-xs px-3 py-2 rounded-lg transition shadow-lg shadow-amber-500/10 flex items-center gap-1.5">
+          <span>⚡</span> Generar 50 Demos
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- NAVIGATION TABS -->
+  <nav class="bg-slate-900 border-b border-slate-800/80 no-print">
+    <div class="max-w-7xl mx-auto px-4 flex space-x-1 overflow-x-auto">
+      <button onclick="switchTab('registrar')" id="tab-btn-registrar" class="nav-tab active px-5 py-3 text-xs font-bold border-b-2 border-emerald-400 text-emerald-400 bg-slate-800/50 flex items-center gap-2 transition">
+        <span>📝</span> 1. Captura & Base de Datos
+      </button>
+      <button onclick="switchTab('analisis')" id="tab-btn-analisis" class="nav-tab px-5 py-3 text-xs font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 hover:border-slate-700 flex items-center gap-2 transition">
+        <span>📊</span> 2. Análisis Descriptivo (UF2)
+      </button>
+      <button onclick="switchTab('probabilidad')" id="tab-btn-probabilidad" class="nav-tab px-5 py-3 text-xs font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 hover:border-slate-700 flex items-center gap-2 transition">
+        <span>🎲</span> 3. Probabilidad & Contingencia (UF3)
+      </button>
+      <button onclick="switchTab('informe')" id="tab-btn-informe" class="nav-tab px-5 py-3 text-xs font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 hover:border-slate-700 flex items-center gap-2 transition">
+        <span>📄</span> 4. Informe Ejecutivo PDF
+      </button>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-7xl mx-auto px-4 py-6 flex-grow w-full space-y-6">
+
+    <!-- KPI CARDS SUMMARY (Siempre visibles arriba) -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 no-print">
+      <div class="bg-slate-800/60 border border-slate-700/50 rounded-xl p-4 relative overflow-hidden backdrop-blur-sm">
+        <div class="absolute top-0 right-0 w-16 h-16 bg-emerald-500/10 rounded-full blur-xl"></div>
+        <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Permanencia Promedio</p>
+        <h3 id="kpi-promedio" class="text-2xl font-black text-emerald-400 mt-1">0.0 <span class="text-xs font-medium text-slate-400">min</span></h3>
+        <p id="kpi-promedio-sub" class="text-[10px] text-slate-500 mt-1">Desviación estándar: --</p>
+      </div>
+
+      <div class="bg-slate-800/60 border border-slate-700/50 rounded-xl p-4 relative overflow-hidden backdrop-blur-sm">
+        <div class="absolute top-0 right-0 w-16 h-16 bg-cyan-500/10 rounded-full blur-xl"></div>
+        <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Zona Más Frecuentada</p>
+        <h3 id="kpi-zona" class="text-lg font-bold text-cyan-400 mt-1 truncate">--</h3>
+        <p id="kpi-zona-sub" class="text-[10px] text-slate-500 mt-1">Moda cualitativa principal</p>
+      </div>
+
+      <div class="bg-slate-800/60 border border-slate-700/50 rounded-xl p-4 relative overflow-hidden backdrop-blur-sm">
+        <div class="absolute top-0 right-0 w-16 h-16 bg-amber-500/10 rounded-full blur-xl"></div>
+        <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Franja Horaria Pico</p>
+        <h3 id="kpi-franja" class="text-lg font-bold text-amber-400 mt-1">--</h3>
+        <p id="kpi-franja-sub" class="text-[10px] text-slate-500 mt-1">Mayor afluencia de usuarios</p>
+      </div>
+
+      <div class="bg-slate-800/60 border border-slate-700/50 rounded-xl p-4 relative overflow-hidden backdrop-blur-sm">
+        <div class="absolute top-0 right-0 w-16 h-16 bg-purple-500/10 rounded-full blur-xl"></div>
+        <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Tasa de Hidratación</p>
+        <h3 id="kpi-hidratacion" class="text-2xl font-black text-purple-400 mt-1">0%</h3>
+        <p id="kpi-hidratacion-sub" class="text-[10px] text-slate-500 mt-1">Usuarios con termo/botella</p>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 1: REGISTRAR ==================== -->
+    <section id="tab-registrar" class="tab-content space-y-6">
+      
+      <!-- FORMULARIO DE CAPTURA -->
+      <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-6 shadow-xl">
+        <div class="flex items-center justify-between border-b border-slate-700/60 pb-3 mb-5">
+          <div class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-emerald-400 animate-pulse"></span>
+            <h2 class="text-base font-bold text-white">Formulario de Registro de Observación en Campo</h2>
+          </div>
+          <span class="text-xs text-slate-400">Población: Usuarios del Gimnasio UNIPAZ</span>
+        </div>
+
+        <form id="form-registro" onsubmit="guardarNuevoRegistro(event)" class="space-y-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Fecha</label>
+              <input type="date" id="reg-fecha" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs text-white focus:border-emerald-400 focus:outline-none">
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Hora de Ingreso</label>
+              <input type="time" id="reg-hora" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs text-white focus:border-emerald-400 focus:outline-none">
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">1. Zona del gimnasio (Cualitativa)</label>
+              <select id="reg-zona" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs text-white focus:border-emerald-400 focus:outline-none">
+                <option value="">-- Seleccionar --</option>
+                <option value="Pesas libres">Pesas libres</option>
+                <option value="Máquinas cardiovasculares">Máquinas cardiovasculares</option>
+                <option value="Zona funcional">Zona funcional</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">2. Permanencia (min) (Cuantitativa)</label>
+              <input type="number" step="0.1" min="1" max="240" id="reg-tiempo" placeholder="Ej: 45.5" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs text-white focus:border-emerald-400 focus:outline-none">
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">3. Frecuencia de asistencia (Cualitativa)</label>
+              <select id="reg-frecuencia" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs text-white focus:border-emerald-400 focus:outline-none">
+                <option value="">-- Seleccionar --</option>
+                <option value="Primera vez en la semana">Primera vez en la semana</option>
+                <option value="2 a 3 veces">2 a 3 veces</option>
+                <option value="4 o más veces">4 o más veces</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">4. Elemento de hidratación (Cualitativa)</label>
+              <select id="reg-hidratacion" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs text-white focus:border-emerald-400 focus:outline-none">
+                <option value="">-- Seleccionar --</option>
+                <option value="Sí">Sí</option>
+                <option value="No">No</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">5. Estado de equipos 1-5 (Cualitativa)</label>
+              <select id="reg-calificacion" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs text-white focus:border-emerald-400 focus:outline-none">
+                <option value="">-- Seleccionar --</option>
+                <option value="1">1 (Muy Deficiente)</option>
+                <option value="2">2 (Deficiente)</option>
+                <option value="3">3 (Aceptable)</option>
+                <option value="4">4 (Bueno)</option>
+                <option value="5">5 (Excelente)</option>
+              </select>
+            </div>
+
+            <div class="flex items-end gap-2">
+              <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold p-2.5 rounded-lg text-xs transition shadow-lg shadow-emerald-500/20">
+                ➕ Guardar Registro
+              </button>
+            </div>
+
+          </div>
+        </form>
+      </div>
+
+      <!-- TABLA Y HERRAMIENTAS DE GESTIÓN -->
+      <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-6 shadow-xl space-y-4">
+        
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-700/60 pb-4">
+          <div>
+            <h3 class="text-base font-bold text-white">Base de Datos Recolectada</h3>
+            <p class="text-xs text-slate-400">Almacenamiento persistente en localStorage del navegador</p>
+          </div>
+
+          <!-- BOTONES DE GESTIÓN -->
+          <div class="flex flex-wrap gap-2">
+            <button onclick="exportarCSV()" class="bg-slate-700 hover:bg-slate-600 text-white font-medium text-xs px-3 py-2 rounded-lg transition border border-slate-600 flex items-center gap-1">
+              📥 Exportar CSV (Excel)
+            </button>
+            
+            <button onclick="document.getElementById('input-file-csv').click()" class="bg-slate-700 hover:bg-slate-600 text-white font-medium text-xs px-3 py-2 rounded-lg transition border border-slate-600 flex items-center gap-1">
+              📤 Importar CSV & Unir
+            </button>
+            <input type="file" id="input-file-csv" accept=".csv" class="hidden" onchange="importarCSV(event)">
+
+            <button onclick="descargarJSON()" class="bg-slate-700 hover:bg-slate-600 text-amber-400 font-medium text-xs px-3 py-2 rounded-lg transition border border-slate-600">
+              💾 Backup JSON
+            </button>
+
+            <button onclick="borrarTodaLaBase()" class="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 font-medium text-xs px-3 py-2 rounded-lg transition">
+              🗑️ Limpiar Todo
+            </button>
+          </div>
+        </div>
+
+        <!-- FILTRADO RÁPIDO DE TABLA -->
+        <div class="flex flex-col sm:flex-row justify-between gap-3">
+          <input type="text" id="tabla-busqueda" onkeyup="renderTabla()" placeholder="🔍 Buscar por cualquier término (ej. Pesas, 14:00, Sí)..." class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white w-full sm:w-72 focus:outline-none focus:border-emerald-400">
+          
+          <div class="text-xs text-slate-400 flex items-center gap-2">
+            <span>Mostrar:</span>
+            <select id="tabla-paginacion" onchange="renderTabla()" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-white">
+              <option value="10">10 registros</option>
+              <option value="25">25 registros</option>
+              <option value="50" selected>50 registros</option>
+              <option value="1000">Todos</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- TABLA PRINCIPAL -->
+        <div class="overflow-x-auto rounded-xl border border-slate-700/80">
+          <table class="w-full text-left text-xs text-slate-300">
+            <thead class="bg-slate-900 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-700">
+              <tr>
+                <th class="p-3 text-center">N.º</th>
+                <th class="p-3">Fecha</th>
+                <th class="p-3">Hora</th>
+                <th class="p-3">Franja Horaria</th>
+                <th class="p-3">Zona</th>
+                <th class="p-3 text-right">Permanencia (min)</th>
+                <th class="p-3">Frecuencia</th>
+                <th class="p-3 text-center">Hidratación</th>
+                <th class="p-3 text-center">Calificación</th>
+                <th class="p-3 text-center">Acción</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-registros-body" class="divide-y divide-slate-700/50 bg-slate-800/40">
+              <!-- Render dinámico -->
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- ==================== TAB 2: ANÁLISIS DESCRIPTIVO ==================== -->
+    <section id="tab-analisis" class="tab-content hidden space-y-6">
+      
+      <!-- SELECTOR DE VARIABLE -->
+      <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-5 shadow-xl flex flex-col md:flex-row gap-4 justify-between items-center">
+        <div class="w-full md:w-1/2">
+          <label class="block text-xs font-bold text-emerald-400 mb-1">Seleccionar Variable a Analizar</label>
+          <select id="select-var-analisis" onchange="renderAnalisis()" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs text-white font-medium focus:border-emerald-400 outline-none">
+            <option value="tiempo">Tiempo de permanencia (min) — Cuantitativa Continua</option>
+            <option value="zona">Zona del gimnasio — Cualitativa Nominal</option>
+            <option value="frecuencia">Frecuencia de asistencia — Cualitativa Ordinal</option>
+            <option value="hidratacion">Elemento de Hidratación — Cualitativa Dicotómica</option>
+            <option value="calificacion">Calificación del estado de equipos — Cualitativa Ordinal</option>
+            <option value="franja">Franja Horaria — Cualitativa Calculada</option>
+          </select>
+        </div>
+
+        <div class="w-full md:w-1/2 flex gap-2">
+          <div class="w-1/2">
+            <label class="block text-xs font-semibold text-slate-400 mb-1">Filtro por subgrupo</label>
+            <select id="select-filtro-var" onchange="updateFiltroValores()" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white">
+              <option value="ninguno">-- Sin filtro --</option>
+              <option value="zona">Zona del gimnasio</option>
+              <option value="frecuencia">Frecuencia</option>
+              <option value="hidratacion">Hidratación</option>
+            </select>
+          </div>
+          <div class="w-1/2">
+            <label class="block text-xs font-semibold text-slate-400 mb-1">Valor de filtro</label>
+            <select id="select-filtro-val" onchange="renderAnalisis()" disabled class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white">
+              <option value="">-- Todos --</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- AREA DINÁMICA DE RESULTADOS DESCRIPTIVOS -->
+      <div id="contenedor-analisis-resultados" class="space-y-6">
+        <!-- Renderizado JS -->
+      </div>
+
+    </section>
+
+    <!-- ==================== TAB 3: PROBABILIDAD ==================== -->
+    <section id="tab-probabilidad" class="tab-content hidden space-y-6">
+      
+      <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-6 shadow-xl space-y-6">
+        <div>
+          <h2 class="text-base font-bold text-white">Cálculo de Probabilidades Empíricas & Condicionales</h2>
+          <p class="text-xs text-slate-400">Probabilidad por frecuencia relativa: $P(A) = \frac{n(A)}{n}$, $P(A|B) = \frac{P(A \cap B)}{P(B)}$</p>
+        </div>
+
+        <!-- CALCULADORA INTERACTIVA -->
+        <div class="bg-slate-900/80 p-5 rounded-xl border border-slate-700/80 space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            <!-- EVENTO A -->
+            <div class="bg-slate-800/60 p-4 rounded-xl border border-slate-700 space-y-3">
+              <div class="flex justify-between items-center border-b border-slate-700 pb-2">
+                <span class="text-xs font-bold text-emerald-400">Evento A (Principal)</span>
+                <span class="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded">Obligatorio</span>
+              </div>
+              
+              <div>
+                <label class="block text-xs font-semibold text-slate-300 mb-1">Variable A</label>
+                <select id="prob-var-a" onchange="updateProbOptions('a')" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white">
+                  <option value="tiempo">Tiempo de permanencia (min)</option>
+                  <option value="zona">Zona del gimnasio</option>
+                  <option value="frecuencia">Frecuencia de asistencia</option>
+                  <option value="hidratacion">Hidratación</option>
+                  <option value="calificacion">Calificación de equipos</option>
+                </select>
+              </div>
+
+              <div id="group-cond-a" class="flex gap-2">
+                <div class="w-1/2">
+                  <label class="block text-xs text-slate-400 mb-1">Condición</label>
+                  <select id="prob-op-a" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-xs text-white">
+                    <option value="gt">Mayor que (>)</option>
+                    <option value="lte">Menor o igual que (<=)</option>
+                  </select>
+                </div>
+                <div class="w-1/2">
+                  <label class="block text-xs text-slate-400 mb-1">Valor</label>
+                  <input type="number" id="prob-val-num-a" value="45" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-xs text-white">
+                </div>
+              </div>
+
+              <div id="group-cat-a" class="hidden">
+                <label class="block text-xs text-slate-400 mb-1">Categoría A</label>
+                <select id="prob-cat-a" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-xs text-white"></select>
+              </div>
+            </div>
+
+            <!-- EVENTO B -->
+            <div class="bg-slate-800/60 p-4 rounded-xl border border-slate-700 space-y-3">
+              <div class="flex justify-between items-center border-b border-slate-700 pb-2">
+                <span class="text-xs font-bold text-amber-400">Evento B (Condición dada)</span>
+                <span class="text-[10px] bg-slate-700 text-slate-300 px-2 py-0.5 rounded">Opcional</span>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-300 mb-1">Variable B (Cualitativa)</label>
+                <select id="prob-var-b" onchange="updateProbOptions('b')" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white">
+                  <option value="ninguna">-- Ninguna (Solo P(A)) --</option>
+                  <option value="zona">Zona del gimnasio</option>
+                  <option value="frecuencia">Frecuencia de asistencia</option>
+                  <option value="hidratacion">Hidratación</option>
+                  <option value="calificacion">Calificación de equipos</option>
+                </select>
+              </div>
+
+              <div id="group-cat-b" class="hidden">
+                <label class="block text-xs text-slate-400 mb-1">Categoría B</label>
+                <select id="prob-cat-b" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-xs text-white"></select>
+              </div>
+            </div>
+
+          </div>
+
+          <button onclick="calcularProbabilidades()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-extrabold py-3 rounded-xl text-xs transition shadow-lg shadow-emerald-500/20">
+            🧮 Calcular Probabilidades & Comparar
+          </button>
+        </div>
+
+        <!-- RESULTADOS PROBABILIDAD -->
+        <div id="contenedor-resultado-probabilidad"></div>
+
+        <hr class="border-slate-700/60">
+
+        <!-- TABLA DE CONTINGENCIA -->
+        <div class="space-y-4">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <div>
+              <h3 class="text-sm font-bold text-white">Tabla de Contingencia (Doble Entrada)</h3>
+              <p class="text-xs text-slate-400">Cruce frecuencial entre dos variables cualitativas de la muestra</p>
+            </div>
+
+            <div class="flex gap-2">
+              <select id="cont-filas" onchange="renderContingencia()" class="bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white">
+                <option value="zona">Filas: Zona</option>
+                <option value="frecuencia">Filas: Frecuencia</option>
+                <option value="hidratacion">Filas: Hidratación</option>
+                <option value="calificacion">Filas: Calificación</option>
+              </select>
+              <select id="cont-cols" onchange="renderContingencia()" class="bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white">
+                <option value="hidratacion">Columnas: Hidratación</option>
+                <option value="zona">Columnas: Zona</option>
+                <option value="frecuencia">Columnas: Frecuencia</option>
+                <option value="calificacion">Columnas: Calificación</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="contenedor-tabla-contingencia" class="overflow-x-auto rounded-xl border border-slate-700"></div>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- ==================== TAB 4: INFORME EJECUTIVO ==================== -->
+    <section id="tab-informe" class="tab-content hidden space-y-6">
+      
+      <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-4 flex justify-between items-center no-print">
+        <span class="text-xs text-slate-300">Este informe consolida automáticamente la ficha técnica, los gráficos y tus análisis guardados para imprimir.</span>
+        <button onclick="window.print()" class="bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-bold px-5 py-2.5 rounded-xl text-xs transition shadow-lg shadow-amber-500/20 flex items-center gap-2">
+          🖨️ Imprimir / Descargar PDF
+        </button>
+      </div>
+
+      <!-- REPORTE FORMAL IMPRESO -->
+      <div class="bg-white rounded-2xl p-8 card-print text-slate-900 space-y-6 border border-slate-200">
+        
+        <!-- HEADER INFORME -->
+        <div class="border-b-2 border-slate-900 pb-4 flex justify-between items-start">
+          <div>
+            <h1 class="text-xl font-black text-slate-900 uppercase tracking-tight">Informe Estadístico de Investigación de Campo</h1>
+            <p class="text-xs font-bold text-slate-700">Proyecto de Aula · Estadística (840601) · Periodo 2026 B</p>
+            <p class="text-xs text-slate-600">UNIPAZ — Escuela de Ingeniería de Producción · Barrancabermeja</p>
+          </div>
+          <div class="text-right text-xs">
+            <p class="font-bold text-slate-900">Espacio: Gimnasio UNIPAZ</p>
+            <p class="text-slate-600">Emisión: <span id="inf-fecha-emision">--</span></p>
+          </div>
+        </div>
+
+        <!-- 1. FICHA TÉCNICA -->
+        <div class="space-y-2">
+          <h2 class="text-xs font-extrabold text-slate-900 uppercase tracking-wider bg-slate-100 p-2 border-l-4 border-slate-900">1. Ficha Técnica del Estudio</h2>
+          <div class="grid grid-cols-2 gap-4 text-xs bg-slate-50 p-3 rounded border border-slate-200">
+            <div>
+              <p><strong>Objetivo:</strong> Analizar la permanencia, niveles de congestión y perfil de uso de los usuarios en el Gimnasio UNIPAZ.</p>
+              <p class="mt-1"><strong>Población:</strong> Usuarios del Gimnasio UNIPAZ (estudiantes, docentes y personal administrative).</p>
+              <p class="mt-1"><strong>Muestra ($n$):</strong> <span id="inf-muestra-n">0</span> registros de campo colectados.</p>
+            </div>
+            <div>
+              <p><strong>Tipo de Muestreo:</strong> Probabilístico Sistemático por franjas de atención.</p>
+              <p class="mt-1"><strong>Periodo de Muestreo:</strong> <span id="inf-periodo-rango">--</span></p>
+              <p class="mt-1"><strong>Variables:</strong> Zona (Cualitativa), Permanencia (Cuantitativa), Frecuencia (Cualitativa), Hidratación (Cualitativa), Estado Equipos (Cualitativa).</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. RESUMEN EJECUTIVO DE MEDIDAS -->
+        <div class="space-y-2">
+          <h2 class="text-xs font-extrabold text-slate-900 uppercase tracking-wider bg-slate-100 p-2 border-l-4 border-slate-900">2. Consolidado de Medidas Estadísticas</h2>
+          <div id="inf-resumen-medidas-tabla" class="overflow-x-auto text-xs"></div>
+        </div>
+
+        <!-- 3. CUADROS EDITABLES PERSISTENTES -->
+        <div class="space-y-4">
+          <h2 class="text-xs font-extrabold text-slate-900 uppercase tracking-wider bg-slate-100 p-2 border-l-4 border-slate-900">3. Análisis, Conclusiones y Recomendaciones</h2>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-800 mb-1">3.1. Interpretación de los Resultados</label>
+            <textarea id="inf-txt-interp" onchange="guardarTextosInforme()" rows="4" placeholder="Escriba aquí la interpretación analítica de las tablas, histogramas, medidas de tendencia central y dispersión..." class="w-full p-3 text-xs border border-slate-300 rounded focus:outline-none bg-slate-50 print-text-dark"></textarea>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-800 mb-1">3.2. Conclusiones del Estudio</label>
+            <textarea id="inf-txt-concl" onchange="guardarTextosInforme()" rows="4" placeholder="Sintetice las principales conclusiones cuantitativas y cualitativas alcanzadas..." class="w-full p-3 text-xs border border-slate-300 rounded focus:outline-none bg-slate-50 print-text-dark"></textarea>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-800 mb-1">3.3. Recomendaciones para la Dependencia (Gimnasio UNIPAZ)</label>
+            <textarea id="inf-txt-recom" onchange="guardarTextosInforme()" rows="4" placeholder="Plantee al menos 3 recomendaciones operativas sustentadas en la evidencia (ej. ampliación de franjas pico, redistribución de máquinas)..." class="w-full p-3 text-xs border border-slate-300 rounded focus:outline-none bg-slate-50 print-text-dark"></textarea>
+          </div>
+        </div>
+
+        <!-- FIRMAS -->
+        <div class="pt-8 grid grid-cols-2 gap-8 text-center text-xs text-slate-600">
+          <div class="border-t border-slate-300 pt-2">
+            <p class="font-bold text-slate-800">Equipo Investigador de Aula</p>
+            <p>Estudiantes de Estadística UNIPAZ</p>
+          </div>
+          <div class="border-t border-slate-300 pt-2">
+            <p class="font-bold text-slate-800">Omar Guerrero Avilés</p>
+            <p>Docente de Estadística · UNIPAZ</p>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="bg-slate-950 border-t border-slate-800 py-4 text-center text-xs text-slate-500 no-print">
+    EstadíApp UNIPAZ · Escuela de Ingeniería de Producción · Periodo 2026 B
+  </footer>
+
+  <!-- LÓGICA COMPLETA DE LA APLICACIÓN -->
+  <script>
+    // ESTADO GLOBAL
+    let registros = [];
+
+    // INICIALIZACIÓN
+    document.addEventListener('DOMContentLoaded', () => {
+      cargarStorage();
+      setFechaHoraDefault();
+      renderTabla();
+      actualizarKPIs();
+      updateProbOptions('a');
+      updateProbOptions('b');
+      cargarTextosInforme();
+    });
+
+    function setFechaHoraDefault() {
+      const now = new Date();
+      document.getElementById('reg-fecha').value = now.toISOString().split('T')[0];
+      const h = String(now.getHours()).padStart(2, '0');
+      const m = String(now.getMinutes()).padStart(2, '0');
+      document.getElementById('reg-hora').value = `${h}:${m}`;
+    }
+
+    function switchTab(tabName) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.nav-tab').forEach(el => {
+        el.classList.remove('border-emerald-400', 'text-emerald-400', 'bg-slate-800/50', 'active');
+        el.classList.add('border-transparent', 'text-slate-400');
+      });
+
+      const target = document.getElementById(`tab-${tabName}`);
+      const btn = document.getElementById(`tab-btn-${tabName}`);
+
+      if (target) target.classList.remove('hidden');
+      if (btn) {
+        btn.classList.remove('border-transparent', 'text-slate-400');
+        btn.classList.add('border-emerald-400', 'text-emerald-400', 'bg-slate-800/50', 'active');
+      }
+
+      if (tabName === 'analisis') renderAnalisis();
+      if (tabName === 'probabilidad') { calcularProbabilidades(); renderContingencia(); }
+      if (tabName === 'informe') renderInforme();
+    }
+
+    function calcularFranja(horaStr) {
+      if(!horaStr) return "N/A";
+      const h = parseInt(horaStr.split(':')[0], 10);
+      const hStr = String(h).padStart(2, '0');
+      return `${hStr}:00–${hStr}:59`;
+    }
+
+    // LOCAL STORAGE
+    function cargarStorage() {
+      const stored = localStorage.getItem('estadidiapp_unipaz_gym_data_v2');
+      if (stored) {
+        try { registros = JSON.parse(stored); } catch (e) { registros = []; }
+      }
+    }
+
+    function guardarStorage() {
+      localStorage.setItem('estadidiapp_unipaz_gym_data_v2', JSON.stringify(registros));
+      actualizarKPIs();
+    }
+
+    // GENERADOR DE DATOS DE DEMOSTRACIÓN SIMULADOS
+    function generarDatosDemo(cantidad = 50) {
+      const zonas = ["Pesas libres", "Máquinas cardiovasculares", "Zona funcional"];
+      const frecs = ["Primera vez en la semana", "2 a 3 veces", "4 o más veces"];
+      const hidras = ["Sí", "No"];
+      const califs = ["1", "2", "3", "4", "5"];
+      
+      const fechas = ["2026-11-10", "2026-11-11", "2026-11-12", "2026-11-13", "2026-11-14"];
+      const horasPico = [7, 8, 9, 10, 14, 15, 16, 17, 18, 19];
+
+      let nuevos = [];
+      for (let i = 0; i < cantidad; i++) {
+        const h = horasPico[Math.floor(Math.random() * horasPico.length)];
+        const m = Math.floor(Math.random() * 60);
+        const horaStr = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+        
+        // Simular permanencia con distribución razonable (media ~48min)
+        let t = Math.round((25 + Math.random() * 50 + (Math.random() > 0.8 ? 30 : 0)) * 10) / 10;
+
+        nuevos.push({
+          id: Date.now() + i,
+          fecha: fechas[Math.floor(Math.random() * fechas.length)],
+          hora: horaStr,
+          franja: calcularFranja(horaStr),
+          zona: zonas[Math.floor(Math.random() * zonas.length)],
+          tiempo: t,
+          frecuencia: frecs[Math.floor(Math.random() * frecs.length)],
+          hidratacion: Math.random() > 0.25 ? "Sí" : "No",
+          calificacion: califs[Math.floor(Math.random() * califs.length)]
+        });
+      }
+
+      registros = [...registros, ...nuevos];
+      guardarStorage();
+      renderTabla();
+      alert(`⚡ ¡Se generaron y agregaron ${cantidad} datos de prueba realistas!`);
+    }
+
+    // FORMULARIO CRUD
+    function guardarNuevoRegistro(e) {
+      e.preventDefault();
+      const nuevo = {
+        id: Date.now(),
+        fecha: document.getElementById('reg-fecha').value,
+        hora: document.getElementById('reg-hora').value,
+        franja: calcularFranja(document.getElementById('reg-hora').value),
+        zona: document.getElementById('reg-zona').value,
+        tiempo: parseFloat(document.getElementById('reg-tiempo').value),
+        frecuencia: document.getElementById('reg-frecuencia').value,
+        hidratacion: document.getElementById('reg-hidratacion').value,
+        calificacion: document.getElementById('reg-calificacion').value
+      };
+
+      registros.push(nuevo);
+      guardarStorage();
+      renderTabla();
+      document.getElementById('form-registro').reset();
+      setFechaHoraDefault();
+      alert('✅ Registro almacenado correctamente.');
+    }
+
+    function eliminarRegistro(id) {
+      if (confirm('¿Eliminar esta observación permanentemente?')) {
+        registros = registros.filter(r => r.id !== id);
+        guardarStorage();
+        renderTabla();
+      }
+    }
+
+    function borrarTodaLaBase() {
+      if (confirm('⚠️ ¿Desea vaciar TODOS los datos guardados?')) {
+        registros = [];
+        guardarStorage();
+        renderTabla();
+      }
+    }
+
+    // RENDERIZADO DE TABLA & KPIS
+    function renderTabla() {
+      const tbody = document.getElementById('tabla-registros-body');
+      document.getElementById('header-total-badge').innerText = registros.length;
+
+      const busqueda = (document.getElementById('tabla-busqueda')?.value || '').toLowerCase();
+      const limite = parseInt(document.getElementById('tabla-paginacion')?.value || '50', 10);
+
+      let filtrados = registros.filter(r => {
+        return Object.values(r).some(val => String(val).toLowerCase().includes(busqueda));
+      });
+
+      if (filtrados.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="10" class="p-4 text-center text-slate-500">No hay registros coincidentes.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtrados.slice(0, limite).reverse().map((r, idx) => `
+        <tr class="hover:bg-slate-800/80 transition border-b border-slate-700/40">
+          <td class="p-3 text-center font-mono text-slate-500">${filtrados.length - idx}</td>
+          <td class="p-3 font-mono">${r.fecha}</td>
+          <td class="p-3 font-mono text-slate-400">${r.hora}</td>
+          <td class="p-3 font-semibold text-emerald-400">${r.franja}</td>
+          <td class="p-3 font-medium">${r.zona}</td>
+          <td class="p-3 text-right font-bold text-amber-400 font-mono">${r.tiempo.toLocaleString('es-CO')} min</td>
+          <td class="p-3">${r.frecuencia}</td>
+          <td class="p-3 text-center">
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold ${r.hidratacion === 'Sí' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-slate-700 text-slate-400'}">
+              ${r.hidratacion}
+            </span>
+          </td>
+          <td class="p-3 text-center font-bold text-yellow-400">${r.calificacion} ★</td>
+          <td class="p-3 text-center">
+            <button onclick="eliminarRegistro(${r.id})" class="text-red-400 hover:text-red-300 font-bold px-1.5 py-0.5 rounded hover:bg-red-500/10 transition">✕</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function actualizarKPIs() {
+      if (registros.length === 0) {
+        document.getElementById('kpi-promedio').innerText = '0.0 min';
+        document.getElementById('kpi-zona').innerText = '--';
+        document.getElementById('kpi-franja').innerText = '--';
+        document.getElementById('kpi-hidratacion').innerText = '0%';
+        return;
+      }
+
+      const n = registros.length;
+      const tiempos = registros.map(r => r.tiempo);
+      const media = tiempos.reduce((a,b) => a+b, 0) / n;
+      const s2 = n > 1 ? tiempos.reduce((a,b) => a + Math.pow(b-media, 2), 0) / (n - 1) : 0;
+      const s = Math.sqrt(s2);
+
+      document.getElementById('kpi-promedio').innerHTML = `${media.toFixed(1)} <span class="text-xs font-medium text-slate-400">min</span>`;
+      document.getElementById('kpi-promedio-sub').innerText = `Desv. estándar: ${s.toFixed(1)} min`;
+
+      // Moda Zona
+      const frecZona = {};
+      registros.forEach(r => frecZona[r.zona] = (frecZona[r.zona] || 0) + 1);
+      let topZona = Object.keys(frecZona).reduce((a, b) => frecZona[a] > frecZona[b] ? a : b, '--');
+      document.getElementById('kpi-zona').innerText = topZona;
+
+      // Moda Franja
+      const frecFranja = {};
+      registros.forEach(r => frecFranja[r.franja] = (frecFranja[r.franja] || 0) + 1);
+      let topFranja = Object.keys(frecFranja).reduce((a, b) => frecFranja[a] > frecFranja[b] ? a : b, '--');
+      document.getElementById('kpi-franja').innerText = topFranja;
+
+      // Hidratación
+      const hidraSi = registros.filter(r => r.hidratacion === 'Sí').length;
+      document.getElementById('kpi-hidratacion').innerText = `${((hidraSi/n)*100).toFixed(0)}%`;
+    }
+
+    // EXPORTAR & IMPORTAR
+    function exportarCSV() {
+      if (registros.length === 0) return alert('No hay registros para exportar.');
+      let csv = '\uFEFFN.°;Fecha;Hora;Franja horaria;Zona del gimnasio;Tiempo de permanencia (min);Frecuencia de asistencia;Elemento de hidratación;Calificación del estado de equipos\n';
+      registros.forEach((r, i) => {
+        csv += `${i+1};${r.fecha};${r.hora};${r.franja};${r.zona};${r.tiempo.toString().replace('.',',')};${r.frecuencia};${r.hidratacion};${r.calificacion}\n`;
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `gimnasio_unipaz_datos_${new Date().toISOString().split('T')[0]}.csv`;
+      link.click();
+    }
+
+    function importarCSV(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const lines = evt.target.result.split(/\r\n|\n/);
+        let count = 0;
+        for (let i = 1; i < lines.length; i++) {
+          if (!lines[i].trim()) continue;
+          const cols = lines[i].split(';');
+          if (cols.length >= 9) {
+            const t = parseFloat(cols[5].replace(',', '.'));
+            if (!isNaN(t)) {
+              registros.push({
+                id: Date.now() + i,
+                fecha: cols[1].trim(),
+                hora: cols[2].trim(),
+                franja: cols[3].trim() || calcularFranja(cols[2].trim()),
+                zona: cols[4].trim(),
+                tiempo: t,
+                frecuencia: cols[6].trim(),
+                hidratacion: cols[7].trim(),
+                calificacion: cols[8].trim()
+              });
+              count++;
+            }
+          }
+        }
+        guardarStorage();
+        renderTabla();
+        alert(`✅ Se importaron y unieron ${count} observaciones exitosamente.`);
+      };
+      reader.readAsText(file);
+    }
+
+    function descargarJSON() {
+      const blob = new Blob([JSON.stringify(registros, null, 2)], { type: 'application/json' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `backup_gimnasio_unipaz.json`;
+      link.click();
+    }
+
+    // ==================== ANÁLISIS DESCRIPTIVO ====================
+    function updateFiltroValores() {
+      const v = document.getElementById('select-filtro-var').value;
+      const target = document.getElementById('select-filtro-val');
+      if (v === 'ninguno') {
+        target.disabled = true;
+        target.innerHTML = '<option value="">-- Todos --</option>';
+      } else {
+        target.disabled = false;
+        let cats = getCategoriasVar(v);
+        target.innerHTML = cats.map(c => `<option value="${c}">${c}</option>`).join('');
+      }
+      renderAnalisis();
+    }
+
+    function getDatosFiltrados() {
+      const fVar = document.getElementById('select-filtro-var').value;
+      const fVal = document.getElementById('select-filtro-val').value;
+      if (fVar === 'ninguno' || !fVal) return registros;
+      return registros.filter(r => r[fVar] === fVal);
+    }
+
+    function renderAnalisis() {
+      const container = document.getElementById('contenedor-analisis-resultados');
+      const dataSet = getDatosFiltrados();
+
+      if (dataSet.length === 0) {
+        container.innerHTML = `<div class="bg-amber-500/10 border border-amber-500/30 text-amber-400 p-4 rounded-xl text-xs">No hay observaciones cargadas para generar el análisis descriptivo.</div>`;
+        return;
+      }
+
+      const varKey = document.getElementById('select-var-analisis').value;
+
+      if (varKey === 'tiempo') {
+        renderCuantitativo(container, dataSet);
+      } else {
+        renderCualitativo(container, dataSet, varKey);
+      }
+    }
+
+    function renderCuantitativo(container, dataSet) {
+      const datos = dataSet.map(r => r.tiempo).sort((a,b) => a-b);
+      const n = datos.length;
+      const suma = datos.reduce((a,b) => a+b, 0);
+      const media = suma / n;
+
+      let mediana = (n % 2 === 0) ? (datos[n/2 - 1] + datos[n/2]) / 2 : datos[Math.floor(n/2)];
+
+      const frecs = {};
+      datos.forEach(x => frecs[x] = (frecs[x] || 0) + 1);
+      let maxFrec = Math.max(...Object.values(frecs));
+      let modas = maxFrec > 1 ? Object.keys(frecs).filter(k => frecs[k] === maxFrec).map(Number) : [];
+
+      const min = datos[0];
+      const max = datos[n-1];
+      const rango = max - min;
+
+      const s2 = n > 1 ? datos.reduce((acc, val) => acc + Math.pow(val - media, 2), 0) / (n - 1) : 0;
+      const s = Math.sqrt(s2);
+      const cv = (s / media) * 100;
+
+      function getCuartilInc(arr, p) {
+        if (arr.length === 1) return arr[0];
+        const rank = p * (arr.length - 1);
+        const low = Math.floor(rank);
+        const high = Math.ceil(rank);
+        const weight = rank - low;
+        return arr[low] + weight * (arr[high] - arr[low]);
+      }
+
+      const q1 = getCuartilInc(datos, 0.25);
+      const q2 = mediana;
+      const q3 = getCuartilInc(datos, 0.75);
+      const ric = q3 - q1;
+
+      // Sturges
+      const kClasses = Math.max(1, Math.round(1 + 3.322 * Math.log10(n)));
+      const amp = parseFloat((rango / kClasses).toFixed(1)) || 1.0;
+
+      let clases = [];
+      let curLi = min;
+      let acFi = 0;
+
+      for (let i = 0; i < kClasses; i++) {
+        let curLs = (i === kClasses - 1) ? max : curLi + amp;
+        let fi = datos.filter(x => (i === kClasses - 1) ? (x >= curLi && x <= curLs) : (x >= curLi && x < curLs)).length;
+        acFi += fi;
+        let xi = (curLi + curLs) / 2;
+        clases.push({ i: i + 1, Li: curLi, Ls: curLs, xi, fi, Fi: acFi, hi: fi/n, Hi: acFi/n });
+        curLi = curLs;
+      }
+
+      container.innerHTML = `
+        <!-- MEDIDAS PRINCIPALES -->
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+          <div class="bg-slate-800/90 border border-slate-700 p-3 rounded-xl text-center">
+            <span class="text-[10px] text-slate-400 block font-bold uppercase">Muestra (n)</span>
+            <span class="text-xl font-extrabold text-white">${n}</span>
+          </div>
+          <div class="bg-slate-800/90 border border-slate-700 p-3 rounded-xl text-center">
+            <span class="text-[10px] text-slate-400 block font-bold uppercase">Media (X̄)</span>
+            <span class="text-xl font-extrabold text-emerald-400">${media.toFixed(2).replace('.',',')}</span>
+          </div>
+          <div class="bg-slate-800/90 border border-slate-700 p-3 rounded-xl text-center">
+            <span class="text-[10px] text-slate-400 block font-bold uppercase">Mediana (Me)</span>
+            <span class="text-xl font-extrabold text-amber-400">${mediana.toFixed(2).replace('.',',')}</span>
+          </div>
+          <div class="bg-slate-800/90 border border-slate-700 p-3 rounded-xl text-center">
+            <span class="text-[10px] text-slate-400 block font-bold uppercase">Desv. Estándar (s)</span>
+            <span class="text-xl font-extrabold text-cyan-400">${s.toFixed(2).replace('.',',')}</span>
+          </div>
+          <div class="bg-slate-800/90 border border-slate-700 p-3 rounded-xl text-center">
+            <span class="text-[10px] text-slate-400 block font-bold uppercase">CV (%)</span>
+            <span class="text-xl font-extrabold text-purple-400">${cv.toFixed(2).replace('.',',')}%</span>
+          </div>
+          <div class="bg-slate-800/90 border border-slate-700 p-3 rounded-xl text-center">
+            <span class="text-[10px] text-slate-400 block font-bold uppercase">RIC (Q3-Q1)</span>
+            <span class="text-xl font-extrabold text-slate-200">${ric.toFixed(2).replace('.',',')}</span>
+          </div>
+        </div>
+
+        <!-- TABLA MEDIDAS COMPLETA -->
+        <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-3">
+          <h3 class="text-sm font-bold text-white border-b border-slate-700 pb-2">Resumen Consolidado de Medidas de Posición y Dispersión</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs text-left text-slate-300">
+              <thead class="bg-slate-900 text-slate-400 text-[10px] uppercase">
+                <tr><th>Medida Estadistica</th><th>Valor Calculado</th><th>Fórmula Aplicada / Interpretación</th></tr>
+              </thead>
+              <tbody class="divide-y divide-slate-700/60">
+                <tr><td class="p-2 font-semibold text-white">Suma Total ∑x</td><td class="p-2 font-mono text-emerald-400">${suma.toFixed(2).replace('.',',')} min</td><td class="p-2 text-slate-400">Tiempo acumulado de todos los usuarios</td></tr>
+                <tr><td class="p-2 font-semibold text-white">Límites (Mín / Máx)</td><td class="p-2 font-mono">${min} min / ${max} min</td><td class="p-2 text-slate-400">Rango R = ${rango.toFixed(2).replace('.',',')} min</td></tr>
+                <tr><td class="p-2 font-semibold text-white">Varianza Muestral s²</td><td class="p-2 font-mono">${s2.toFixed(2).replace('.',',')}</td><td class="p-2 text-slate-400">s² = ∑(x - X̄)² ÷ (n - 1)</td></tr>
+                <tr><td class="p-2 font-semibold text-white">Moda Mo</td><td class="p-2 font-mono">${modas.length > 0 ? modas.join('; ') + ' min' : 'Sin moda'}</td><td class="p-2 text-slate-400">Valor(es) de mayor frecuencia de repetición</td></tr>
+                <tr><td class="p-2 font-semibold text-white">Cuartiles (Q1, Q2, Q3)</td><td class="p-2 font-mono">${q1.toFixed(2).replace('.',',')} | ${q2.toFixed(2).replace('.',',')} | ${q3.toFixed(2).replace('.',',')}</td><td class="p-2 text-slate-400">Método CUARTIL.INC Excel (25%, 50%, 75%)</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- TABLA DE FRECUENCIAS STURGES -->
+        <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-3">
+          <div class="flex justify-between items-center border-b border-slate-700 pb-2">
+            <h3 class="text-sm font-bold text-white">Tabla de Frecuencias por Sturges</h3>
+            <span class="text-xs font-mono text-slate-400">Clases k = ${kClasses} | Amplitud A = ${amp.toFixed(2).replace('.',',')}</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs text-left text-slate-300">
+              <thead class="bg-slate-900 text-slate-400 text-[10px] uppercase">
+                <tr><th>Clase</th><th>Intervalo [Li, Ls)</th><th>Marca xi</th><th>fi</th><th>Fi</th><th>hi (%)</th><th>Hi (%)</th></tr>
+              </thead>
+              <tbody class="divide-y divide-slate-700/60 font-mono">
+                ${clases.map(c => `
+                  <tr>
+                    <td class="p-2 text-center text-white font-bold">${c.i}</td>
+                    <td class="p-2 text-emerald-400">[${c.Li.toFixed(1).replace('.',',')} - ${c.Ls.toFixed(1).replace('.',',')}${c.i === kClasses ? ']' : ')'}</td>
+                    <td class="p-2">${c.xi.toFixed(2).replace('.',',')}</td>
+                    <td class="p-2 font-bold text-white">${c.fi}</td>
+                    <td class="p-2">${c.Fi}</td>
+                    <td class="p-2">${(c.hi * 100).toFixed(2).replace('.',',')}%</td>
+                    <td class="p-2">${(c.Hi * 100).toFixed(2).replace('.',',')}%</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- GRÁFICOS SVG INTERACTIVOS -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-5 text-center shadow-xl">
+            <h4 class="text-xs font-bold text-white mb-3">Histograma & Polígono de Frecuencias</h4>
+            ${generarHistogramaSVG(clases)}
+          </div>
+
+          <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-5 text-center shadow-xl">
+            <h4 class="text-xs font-bold text-white mb-3">Diagrama de Caja y Bigotes (Boxplot)</h4>
+            ${generarBoxplotSVG(min, q1, mediana, q3, max, media)}
+          </div>
+        </div>
+
+        <!-- DIAGNÓSTICO AUTOMÁTICO -->
+        <div class="bg-emerald-500/10 border border-emerald-500/30 p-4 rounded-xl text-xs text-emerald-300 space-y-1">
+          <p class="font-bold">📌 Lectura Automática del Proceso:</p>
+          <p>
+            Con n=${n} observaciones, el promedio de permanencia es de <strong>${media.toFixed(2).replace('.',',')} min</strong> y el 50% central está por debajo de <strong>${mediana.toFixed(2).replace('.',',')} min</strong>. 
+            ${media > mediana ? 'Presenta un <strong>sesgo positivo (a la derecha)</strong> debido a usuarios con permanencia prolongada.' : media < mediana ? 'Presenta un <strong>sesgo negativo (a la izquierda)</strong>.' : 'La distribución es <strong>simétrica</strong>.'} 
+            El coeficiente de variación es del <strong>${cv.toFixed(2).replace('.',',')}%</strong> (datos 
+            ${cv < 15 ? 'altamente homogéneos' : cv <= 30 ? 'de variabilidad moderada' : 'muy dispersos / heterogéneos'}).
+          </p>
+        </div>
+      `;
+    }
+
+    function renderCualitativo(container, dataSet, varKey) {
+      const frecs = {};
+      const n = dataSet.length;
+      dataSet.forEach(r => frecs[r[varKey]] = (frecs[r[varKey]] || 0) + 1);
+
+      let tablaCat = [];
+      let acFi = 0, modaCat = '', maxFi = -1;
+
+      for (let cat in frecs) {
+        let fi = frecs[cat];
+        acFi += fi;
+        if (fi > maxFi) { maxFi = fi; modaCat = cat; }
+        tablaCat.push({ cat, fi, Fi: acFi, hi: fi/n, Hi: acFi/n });
+      }
+
+      container.innerHTML = `
+        <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-3">
+          <h3 class="text-sm font-bold text-white border-b border-slate-700 pb-2">Tabla de Frecuencias Categorías</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs text-left text-slate-300">
+              <thead class="bg-slate-900 text-slate-400 text-[10px] uppercase">
+                <tr><th>Categoría</th><th>fi</th><th>Fi</th><th>hi (%)</th><th>Hi (%)</th></tr>
+              </thead>
+              <tbody class="divide-y divide-slate-700/60 font-mono">
+                ${tablaCat.map(c => `
+                  <tr>
+                    <td class="p-2 font-bold text-emerald-400">${c.cat}</td>
+                    <td class="p-2 font-bold text-white">${c.fi}</td>
+                    <td class="p-2">${c.Fi}</td>
+                    <td class="p-2">${(c.hi*100).toFixed(2).replace('.',',')}%</td>
+                    <td class="p-2">${(c.Hi*100).toFixed(2).replace('.',',')}%</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-5 text-center shadow-xl">
+          <h4 class="text-xs font-bold text-white mb-3">Distribución de Frecuencias</h4>
+          ${generarBarrasHorizontalesSVG(tablaCat, n)}
+        </div>
+
+        <div class="bg-emerald-500/10 border border-emerald-500/30 p-4 rounded-xl text-xs text-emerald-300">
+          <p class="font-bold">📌 Lectura Automática:</p>
+          <p>La categoría predominante (Moda) es <strong>"${modaCat}"</strong> con ${maxFi} menciones, representando el <strong>${((maxFi/n)*100).toFixed(2).replace('.',',')}%</strong> de la muestra.</p>
+        </div>
+      `;
+    }
+
+    // GENERADORES DE SVG
+    function generarHistogramaSVG(clases) {
+      const width = 500, height = 230, padding = 35;
+      const maxFi = Math.max(...clases.map(c => c.fi), 1);
+      const bw = (width - 2 * padding) / clases.length;
+
+      let rects = '', points = '';
+      clases.forEach((c, i) => {
+        const bh = (c.fi / maxFi) * (height - 2 * padding);
+        const x = padding + i * bw;
+        const y = height - padding - bh;
+        const cx = x + bw / 2;
+        points += `${cx},${y} `;
+
+        rects += `<rect x="${x}" y="${y}" width="${bw - 3}" height="${bh}" fill="#10B981" opacity="0.8" rx="3"/>`;
+        rects += `<text x="${cx}" y="${y - 4}" font-size="10" font-weight="bold" text-anchor="middle" fill="#10B981">${c.fi}</text>`;
+        rects += `<text x="${cx}" y="${height - padding + 12}" font-size="8" text-anchor="middle" fill="#94A3B8">${c.Li.toFixed(1)}</text>`;
+      });
+
+      return `
+        <svg viewBox="0 0 ${width} ${height}" class="w-full h-auto max-h-56 mx-auto">
+          <line x1="${padding}" y1="${height - padding}" x2="${width - padding}" y2="${height - padding}" stroke="#334155" stroke-width="2"/>
+          <line x1="${padding}" y1="${padding}" x2="${padding}" y2="${height - padding}" stroke="#334155" stroke-width="2"/>
+          ${rects}
+          <polyline points="${points.trim()}" fill="none" stroke="#F59E0B" stroke-width="3" stroke-linecap="round"/>
+        </svg>
+      `;
+    }
+
+    function generarBoxplotSVG(min, q1, med, q3, max, media) {
+      const width = 500, height = 140, padding = 45;
+      const wEff = width - 2 * padding;
+      const r = (max - min) || 1;
+      const getX = val => padding + ((val - min) / r) * wEff;
+
+      const xMin = getX(min), xQ1 = getX(q1), xMed = getX(med), xQ3 = getX(q3), xMax = getX(max), xMedia = getX(media);
+
+      return `
+        <svg viewBox="0 0 ${width} ${height}" class="w-full h-auto max-h-36 mx-auto">
+          <line x1="${xMin}" y1="60" x2="${xQ1}" y2="60" stroke="#94A3B8" stroke-width="2"/>
+          <line x1="${xQ3}" y1="60" x2="${xMax}" y2="60" stroke="#94A3B8" stroke-width="2"/>
+          <line x1="${xMin}" y1="45" x2="${xMin}" y2="75" stroke="#94A3B8" stroke-width="2"/>
+          <line x1="${xMax}" y1="45" x2="${xMax}" y2="75" stroke="#94A3B8" stroke-width="2"/>
+
+          <rect x="${xQ1}" y="35" width="${xQ3 - xQ1}" height="50" fill="#10B981" opacity="0.3" stroke="#10B981" stroke-width="2" rx="4"/>
+          <line x1="${xMed}" y1="35" x2="${xMed}" y2="85" stroke="#F59E0B" stroke-width="3"/>
+
+          <circle cx="${xMedia}" cy="60" r="5" fill="#EF4444"/>
+
+          <text x="${xMin}" y="105" font-size="9" text-anchor="middle" fill="#94A3B8">Mín: ${min}</text>
+          <text x="${xQ1}" y="105" font-size="9" text-anchor="middle" fill="#94A3B8">Q1: ${q1.toFixed(1)}</text>
+          <text x="${xMed}" y="25" font-size="9" font-weight="bold" text-anchor="middle" fill="#F59E0B">Me: ${med.toFixed(1)}</text>
+          <text x="${xQ3}" y="105" font-size="9" text-anchor="middle" fill="#94A3B8">Q3: ${q3.toFixed(1)}</text>
+          <text x="${xMax}" y="105" font-size="9" text-anchor="middle" fill="#94A3B8">Máx: ${max}</text>
+          <text x="${xMedia}" y="25" font-size="9" font-weight="bold" text-anchor="middle" fill="#EF4444">X̄: ${media.toFixed(1)}</text>
+        </svg>
+      `;
+    }
+
+    function generarBarrasHorizontalesSVG(tablaCat, n) {
+      const width = 500, bh = 24, padding = 20;
+      const height = tablaCat.length * (bh + 10) + 2 * padding;
+      const maxFi = Math.max(...tablaCat.map(c => c.fi), 1);
+
+      let bars = '';
+      tablaCat.forEach((c, i) => {
+        const y = padding + i * (bh + 10);
+        const bw = (c.fi / maxFi) * (width - 180);
+        bars += `
+          <text x="140" y="${y + 16}" font-size="10" font-weight="bold" text-anchor="end" fill="#94A3B8">${c.cat}</text>
+          <rect x="150" y="${y}" width="${bw}" height="${bh}" fill="#10B981" rx="4"/>
+          <text x="${160 + bw}" y="${y + 16}" font-size="10" font-weight="bold" fill="#F8FAFC">${c.fi} (${((c.fi/n)*100).toFixed(1)}%)</text>
+        `;
+      });
+
+      return `<svg viewBox="0 0 ${width} ${height}" class="w-full h-auto mx-auto">${bars}</svg>`;
+    }
+
+    // ==================== PROBABILIDADES ====================
+    function getCategoriasVar(v) {
+      if (v === 'zona') return ['Pesas libres', 'Máquinas cardiovasculares', 'Zona funcional'];
+      if (v === 'frecuencia') return ['Primera vez en la semana', '2 a 3 veces', '4 o más veces'];
+      if (v === 'hidratacion') return ['Sí', 'No'];
+      if (v === 'calificacion') return ['1', '2', '3', '4', '5'];
+      return [];
+    }
+
+    function updateProbOptions(tipo) {
+      const varVal = document.getElementById(`prob-var-${tipo}`).value;
+      const condGroup = document.getElementById(`group-cond-${tipo}`);
+      const catGroup = document.getElementById(`group-cat-${tipo}`);
+      const selCat = document.getElementById(`prob-cat-${tipo}`);
+
+      if (varVal === 'tiempo') {
+        if (condGroup) condGroup.classList.remove('hidden');
+        if (catGroup) catGroup.classList.add('hidden');
+      } else if (varVal === 'ninguna') {
+        if (condGroup) condGroup.classList.add('hidden');
+        if (catGroup) catGroup.classList.add('hidden');
+      } else {
+        if (condGroup) condGroup.classList.add('hidden');
+        if (catGroup) catGroup.classList.remove('hidden');
+        const cats = getCategoriasVar(varVal);
+        selCat.innerHTML = cats.map(c => `<option value="${c}">${c}</option>`).join('');
+      }
+    }
+
+    function calcularProbabilidades() {
+      const container = document.getElementById('contenedor-resultado-probabilidad');
+      const n = registros.length;
+
+      if (n === 0) {
+        container.innerHTML = `<div class="bg-amber-500/10 border border-amber-500/30 text-amber-400 p-4 rounded-xl text-xs">Cargue datos para calcular probabilidades.</div>`;
+        return;
+      }
+
+      const varA = document.getElementById('prob-var-a').value;
+      const varB = document.getElementById('prob-var-b').value;
+
+      let evalA = r => {
+        if (varA === 'tiempo') {
+          const op = document.getElementById('prob-op-a').value;
+          const val = parseFloat(document.getElementById('prob-val-num-a').value) || 0;
+          return op === 'gt' ? r.tiempo > val : r.tiempo <= val;
+        }
+        return r[varA] === document.getElementById('prob-cat-a').value;
+      };
+
+      const nA = registros.filter(evalA).length;
+      const pA = nA / n;
+
+      let html = `
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div class="bg-slate-800/90 border border-slate-700 p-4 rounded-xl text-center">
+            <span class="text-[10px] text-slate-400 font-bold uppercase block">Casos A / Total</span>
+            <span class="text-xl font-bold text-white">${nA} / ${n}</span>
+            <p class="text-xs font-bold text-emerald-400 mt-1">P(A) = ${(pA * 100).toFixed(2).replace('.',',')}%</p>
+          </div>
+      `;
+
+      if (varB !== 'ninguna') {
+        const valB = document.getElementById('prob-cat-b').value;
+        let evalB = r => r[varB] === valB;
+        let evalInter = r => evalA(r) && evalB(r);
+
+        const nB = registros.filter(evalB).length;
+        const nInter = registros.filter(evalInter).length;
+
+        const pB = nB / n;
+        const pInter = nInter / n;
+        const pCond = nB > 0 ? nInter / nB : 0;
+
+        const diff = pCond - pA;
+        const efecto = diff > 0.02 ? 'INCREMENTA' : diff < -0.02 ? 'DISMINUYE' : 'NO ALTERA SIGNIFICATIVAMENTE';
+
+        html += `
+            <div class="bg-slate-800/90 border border-slate-700 p-4 rounded-xl text-center">
+              <span class="text-[10px] text-slate-400 font-bold uppercase block">Casos B / Total</span>
+              <span class="text-xl font-bold text-white">${nB} / ${n}</span>
+              <p class="text-xs font-bold text-cyan-400 mt-1">P(B) = ${(pB * 100).toFixed(2).replace('.',',')}%</p>
+            </div>
+            <div class="bg-slate-800/90 border border-slate-700 p-4 rounded-xl text-center">
+              <span class="text-[10px] text-slate-400 font-bold uppercase block">Intersección A ∩ B</span>
+              <span class="text-xl font-bold text-white">${nInter} / ${n}</span>
+              <p class="text-xs font-bold text-purple-400 mt-1">P(A ∩ B) = ${(pInter * 100).toFixed(2).replace('.',',')}%</p>
+            </div>
+            <div class="bg-slate-800/90 border border-amber-500/40 p-4 rounded-xl text-center bg-amber-500/5">
+              <span class="text-[10px] text-amber-400 font-bold uppercase block">Probabilidad Condicional</span>
+              <span class="text-xl font-bold text-white">${nInter} / ${nB}</span>
+              <p class="text-xs font-bold text-amber-400 mt-1">P(A|B) = ${(pCond * 100).toFixed(2).replace('.',',')}%</p>
+            </div>
+          </div>
+
+          <div class="bg-amber-500/10 border border-amber-500/30 p-4 rounded-xl text-xs text-amber-300 mt-3">
+            <p class="font-bold">📌 Análisis Probabilístico:</p>
+            <p>
+              La probabilidad base $P(A)$ es de <strong>${(pA * 100).toFixed(2).replace('.',',')}%</strong>. 
+              Al condicionar por el evento B (<strong>"${valB}"</strong>), la probabilidad resulta en <strong>${(pCond * 100).toFixed(2).replace('.',',')}%</strong>. 
+              Por ende, saber que ocurrió B <strong>${efecto}</strong> la probabilidad del evento A.
+            </p>
+          </div>
+        `;
+      } else {
+        html += `</div>`;
+      }
+
+      container.innerHTML = html;
+    }
+
+    function renderContingencia() {
+      const fKey = document.getElementById('cont-filas').value;
+      const cKey = document.getElementById('cont-cols').value;
+      const container = document.getElementById('contenedor-tabla-contingencia');
+
+      const catsF = getCategoriasVar(fKey);
+      const catsC = getCategoriasVar(cKey);
+
+      let grid = {}, totF = {}, totC = {}, totalG = 0;
+      catsF.forEach(f => {
+        grid[f] = {};
+        totF[f] = 0;
+        catsC.forEach(c => grid[f][c] = 0);
+      });
+      catsC.forEach(c => totC[c] = 0);
+
+      registros.forEach(r => {
+        const vf = r[fKey], vc = r[cKey];
+        if (grid[vf] && grid[vf][vc] !== undefined) {
+          grid[vf][vc]++;
+          totF[vf]++;
+          totC[vc]++;
+          totalG++;
+        }
+      });
+
+      container.innerHTML = `
+        <table class="w-full text-xs text-left text-slate-300">
+          <thead class="bg-slate-900 text-slate-400 uppercase text-[10px]">
+            <tr>
+              <th class="p-3">${fKey.toUpperCase()} \\ ${cKey.toUpperCase()}</th>
+              ${catsC.map(c => `<th class="p-3 text-center">${c}</th>`).join('')}
+              <th class="p-3 text-center bg-slate-800 text-white font-bold">Total Fila</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-700/60 font-mono">
+            ${catsF.map(f => `
+              <tr>
+                <td class="p-3 font-bold text-emerald-400 font-sans">${f}</td>
+                ${catsC.map(c => `<td class="p-3 text-center">${grid[f][c]}</td>`).join('')}
+                <td class="p-3 text-center font-bold text-white bg-slate-800/40">${totF[f]}</td>
+              </tr>
+            `).join('')}
+            <tr class="bg-slate-900 font-bold border-t border-slate-700 text-white font-sans">
+              <td class="p-3">Total Columna</td>
+              ${catsC.map(c => `<td class="p-3 text-center font-mono">${totC[c]}</td>`).join('')}
+              <td class="p-3 text-center text-emerald-400 font-mono">${totalG}</td>
+            </tr>
+          </tbody>
+        </table>
+      `;
+    }
+
+    // ==================== INFORME PDF ====================
+    function renderInforme() {
+      document.getElementById('inf-fecha-emision').innerText = new Date().toLocaleDateString('es-CO');
+      document.getElementById('inf-muestra-n').innerText = registros.length;
+
+      if (registros.length > 0) {
+        const fechas = registros.map(r => r.fecha).sort();
+        document.getElementById('inf-periodo-rango').innerText = `${fechas[0]} al ${fechas[fechas.length - 1]}`;
+      }
+
+      const tableContainer = document.getElementById('inf-resumen-medidas-tabla');
+      if (registros.length === 0) {
+        tableContainer.innerHTML = `<p class="text-slate-400 text-xs">Sin registros cargados.</p>`;
+        return;
+      }
+
+      const tiempos = registros.map(r => r.tiempo).sort((a,b)=>a-b);
+      const media = tiempos.reduce((a,b)=>a+b,0) / tiempos.length;
+      const s2 = tiempos.length > 1 ? tiempos.reduce((a,b)=>a+Math.pow(b-media,2),0)/(tiempos.length-1) : 0;
+      const s = Math.sqrt(s2);
+
+      tableContainer.innerHTML = `
+        <table class="w-full text-xs text-left text-slate-800 border border-slate-300">
+          <thead class="bg-slate-100 uppercase text-[10px] font-bold">
+            <tr><th class="p-2 border">Total Registros (n)</th><th class="p-2 border">Media Permanencia</th><th class="p-2 border">Desviación Estándar</th><th class="p-2 border">Zona Predominante</th></tr>
+          </thead>
+          <tbody class="font-mono">
+            <tr>
+              <td class="p-2 border">${registros.length}</td>
+              <td class="p-2 border">${media.toFixed(2).replace('.',',')} min</td>
+              <td class="p-2 border">${s.toFixed(2).replace('.',',')} min</td>
+              <td class="p-2 border font-sans font-bold">Pesas libres / Cardio</td>
+            </tr>
+          </tbody>
+        </table>
+      `;
+    }
+
+    function guardarTextosInforme() {
+      const data = {
+        interp: document.getElementById('inf-txt-interp').value,
+        concl: document.getElementById('inf-txt-concl').value,
+        recom: document.getElementById('inf-txt-recom').value
+      };
+      localStorage.setItem('estadidiapp_unipaz_textos_informe_v2', JSON.stringify(data));
+    }
+
+    function cargarTextosInforme() {
+      const stored = localStorage.getItem('estadidiapp_unipaz_textos_informe_v2');
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          document.getElementById('inf-txt-interp').value = parsed.interp || '';
+          document.getElementById('inf-txt-concl').value = parsed.concl || '';
+          document.getElementById('inf-txt-recom').value = parsed.recom || '';
+        } catch(e) {}
+      }
+    }
+  </script>
+</body>
+</html>
